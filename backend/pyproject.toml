@@ -1,0 +1,218 @@
+[project]
+name = "clinical-copilot-backend"
+version = "0.1.0"
+description = "Clinical Copilot: an LLM that answers clinical questions through a definitions layer, never writing SQL"
+requires-python = ">=3.13"
+
+dependencies = [
+    "fastapi>=0.120",
+    "uvicorn[standard]>=0.40",
+    "sqlalchemy[asyncio]>=2.0.40",
+    "asyncpg>=0.30",
+    "pydantic-settings>=2.8",
+    "structlog>=25.1",
+    "anthropic>=1.0",
+    # The IANA timezone database, for the example tool. Python's `zoneinfo`
+    # reads the system copy when there is one and falls back to this package
+    # when there is not — which is the difference between the tool working and
+    # raising on a slimmer base image than the one in Dockerfile.
+    "tzdata>=2025.1",
+    "alembic>=1.14",
+    # JWT verification. NOT python-jose, which is unmaintained and carries
+    # CVE-2024-33663 (algorithm confusion); FastAPI's own docs moved off it.
+    # [crypto] pulls in the RSA support JWKS verification needs.
+    "pyjwt[crypto]>=2.10",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9",
+    "basedpyright>=1.24",
+    "pytest>=8.3",
+    # >=0.26 for asyncio_default_test_loop_scope, which the session-scoped
+    # engine below depends on.
+    "pytest-asyncio>=0.26",
+    "pytest-xdist>=3.6",
+    "httpx>=0.28",
+]
+
+[tool.uv]
+# This is an application, not a library — uv installs the dependencies and
+# nothing else. No build backend required.
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+# `ruff format` is the formatter, and CI checks it. Formatting is one tool's
+# opinion so that it is never a review comment.
+
+[tool.ruff.lint]
+# Near-everything, listed explicitly rather than "ALL" so that upgrading ruff
+# adds rules on a day we choose instead of the day it ships. Each `ignore`
+# below says why.
+select = [
+    "F",      # pyflakes
+    "E", "W", # pycodestyle
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "ANN",    # flake8-annotations
+    "ASYNC",  # flake8-async — blocking calls in async defs, which is the whole
+              # premise of "async def everywhere" in CONVENTIONS.md
+    "S",      # flake8-bandit
+    "BLE",    # flake8-blind-except
+    "FBT",    # flake8-boolean-trap
+    "B",      # flake8-bugbear
+    "A",      # flake8-builtins
+    "C4",     # flake8-comprehensions
+    "DTZ",    # flake8-datetimez — naive datetimes, in an app that stores them
+    "T10",    # flake8-debugger
+    "EM",     # flake8-errmsg
+    "EXE",    # flake8-executable
+    "FA",     # flake8-future-annotations
+    "ISC",    # flake8-implicit-str-concat
+    "ICN",    # flake8-import-conventions
+    "LOG",    # flake8-logging
+    "G",      # flake8-logging-format — enforces the structlog rules directly
+    "INP",    # flake8-no-pep420
+    "PIE",    # flake8-pie
+    "T20",    # flake8-print — a server logs, it does not print
+    "PYI",    # flake8-pyi
+    "PT",     # flake8-pytest-style
+    "Q",      # flake8-quotes
+    "RSE",    # flake8-raise
+    "RET",    # flake8-return
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify
+    "TID",    # flake8-tidy-imports
+    "TC",     # flake8-type-checking
+    "INT",    # flake8-gettext
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib
+    "ERA",    # eradicate — commented-out code
+    "PGH",    # pygrep-hooks — blanket noqa and type: ignore
+    "PL",     # pylint
+    "TRY",    # tryceratops
+    "FLY",    # flynt
+    "PERF",   # perflint
+    "FURB",   # refurb
+    "FAST",   # FastAPI-specific
+    "RUF",    # ruff-specific
+]
+
+ignore = [
+    # Docstrings here are prose and deliberately so — see the ones on
+    # `llm/types.py` or `StreamingText.tsx`. pydocstyle would demand one on
+    # every public function and then argue about the mood of the first verb,
+    # which is a worse use of attention than the docstrings that matter.
+    "D",
+
+    # `Any` is a documented design choice: JSONB payloads and wire frames are
+    # dicts by intent. Same reasoning as the basedpyright settings below.
+    "ANN401",
+
+    # TRY400 wants `logger.exception` everywhere inside an `except`. It is
+    # wrong here, and interestingly so. The error chain in
+    # `llm/anthropic_provider.py` catches EXPECTED provider failures — a rate
+    # limit, a bad request — and turns each into a StreamError. A traceback on
+    # every one of those is the noise the chain exists to avoid, and in the
+    # AuthenticationError branch logging the exception would echo the key
+    # prefix into the logs, which a comment there says not to do. G201 still
+    # holds us to `.exception()` where a traceback IS wanted.
+    "TRY400",
+
+    # TRY003/EM10x want every exception message hoisted into a variable or an
+    # exception subclass. The result is three lines where one said the thing.
+    "TRY003", "EM101", "EM102",
+
+    # Conflicts with the formatter.
+    "ISC001", "COM812",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",    # assert is the entire point of a test
+    "ANN",     # test signatures are fixtures in, None out; annotating adds nothing
+    "SLF001",  # a test may reach into internals; that is part of its job
+    "PLR2004", # `== 200` reads better than `== HTTP_OK`
+    "ARG",     # fakes accept arguments they ignore to satisfy a Protocol
+    "PLC0415", # a local import keeps a fixture's dependency next to the fixture
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+# The backend's half of "absolute imports only". Zero violations today; this is
+# the cheap moment to keep it that way.
+ban-relative-imports = "all"
+
+[tool.ruff.lint.flake8-type-checking]
+# SQLAlchemy, Pydantic and FastAPI read annotations at RUNTIME. Moving an
+# import into a type-checking block for them is not a tidy-up, it is a
+# NameError at import time.
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "pydantic_settings.BaseSettings",
+    "sqlalchemy.orm.DeclarativeBase",
+]
+runtime-evaluated-decorators = ["fastapi.Depends", "fastapi.Query"]
+
+[tool.ruff.lint.pylint]
+# Set just above the worst function that exists rather than switched off. The
+# three that sit near these limits — the adapter's tool loop, the worker's
+# `_generate`, the SSE encoder — are complex because CONVENTIONS.md argues they
+# should be, and the ceiling stops the next one being worse.
+max-args = 6
+max-branches = 16
+max-statements = 60
+# `condition_for` and `_parse_predicate` are one `match` arm per predicate
+# shape in app/clinical/predicates.py and app/clinical/assembler.py — the
+# return count tracks the number of shapes, not the function's complexity,
+# and splitting it would scatter one dispatch across several files for no
+# clarity gained.
+max-returns = 10
+
+[tool.ruff.lint.mccabe]
+max-complexity = 18
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# Both session-scoped, and this is not optional. app.db.engine is a module-level
+# singleton whose connection pool binds to whichever event loop first used it;
+# a per-test loop makes the second test fail with "attached to a different
+# loop". It is the most common way an async SQLAlchemy suite goes wrong.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+addopts = "-q --strict-markers"
+
+[tool.basedpyright]
+pythonVersion = "3.13"
+include = ["app", "tests"]
+typeCheckingMode = "strict"
+
+# The only suppressions left, and all three are about other people's libraries
+# rather than this codebase:
+#   * asyncpg ships no type stubs at all (everything in bus.py touches it)
+#   * SQLAlchemy's `desc()` returns a partially-generic UnaryExpression
+# Turning these on would mean a `# pyright: ignore` at seven call sites, each
+# recording nothing except that a dependency is under-typed. Re-check when
+# either library improves.
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+
+# Tests are type-checked too, but at "standard". A test signature is fixtures
+# in and None out, so annotating ninety of them finds nothing; and a test
+# reaching into a private helper is doing its job, not breaking a rule.
+[[tool.basedpyright.executionEnvironments]]
+root = "tests"
+# Without this, `app.*` resolves from tests/ instead of the project root.
+extraPaths = ["."]
+reportMissingParameterType = false
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnknownLambdaType = false
+reportMissingTypeArgument = false
+reportPrivateUsage = false

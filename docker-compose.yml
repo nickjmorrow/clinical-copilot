@@ -1,0 +1,124 @@
+# The DEVELOPMENT stack: hot reload, source mounts, published ports.
+# For anything resembling a deployment see docker-compose.prod.yml.
+name: clinical-copilot
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      # Exposed on a non-default port so it never collides with a local Postgres.
+      - '5433:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Nothing is mounted into docker-entrypoint-initdb.d. That hook runs once,
+      # on an empty volume, and ignores every later change — the `migrate`
+      # service below owns the schema instead.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U app -d app']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Migrations run once, in their own container, and everything else waits for
+  # it to exit successfully. Not at application startup: two processes racing to
+  # migrate needs a lock, a migration that fails should stop the deploy rather
+  # than leave a half-started app, and `docker compose up` should still be one
+  # command. `service_completed_successfully` buys all three.
+  migrate:
+    build:
+      context: ./backend
+      target: dev
+    command: ['alembic', 'upgrade', 'head']
+    environment:
+      DATABASE_URL: postgresql+asyncpg://app:app@db:5432/app
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-console}
+    volumes:
+      # Mounted so a new revision applies without rebuilding the image — and
+      # NOT read-only, because the documented way to write one is
+      # `docker compose run --rm migrate alembic revision --autogenerate`,
+      # which has to create a file in versions/. `app` stays read-only: this
+      # container only ever reads the models.
+      - ./backend/alembic:/srv/alembic
+      - ./backend/app:/srv/app:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    environment:
+      DATABASE_URL: postgresql+asyncpg://app:app@db:5432/app
+      # Read from your .env (gitignored). Never hardcode it here.
+      #
+      # Defaulted to empty rather than declared required (`:?`) on purpose: the
+      # required form makes EVERY compose subcommand fail without a .env,
+      # including `down`, `ps`, and `logs`. The backend validates the key at
+      # startup instead and says exactly what to do — see app/config.py.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-console}
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - '8000:8000'
+    volumes:
+      # Source mount + --reload gives you edit-and-refresh without a rebuild.
+      - ./backend/app:/srv/app:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  # The same image as the backend, running a different entrypoint. A separate
+  # PROCESS is the part that matters — see backend/app/worker.py — not a
+  # separate build. This is also where you would scale out: run two and they
+  # claim different rows, because `for update skip locked` says so.
+  worker:
+    build:
+      context: ./backend
+      target: dev
+    # Supervised for the same reason the backend runs with --reload: edit
+    # app/**, the worker restarts. Not the bare `watchfiles` CLI, because that
+    # only restarts on a change — a worker that died between edits stayed dead
+    # while this container still said "running". See app/worker/dev.py.
+    # Production runs the bare `python -m app.worker` under a restart policy.
+    command: ['python', '-m', 'app.worker.dev']
+    environment:
+      DATABASE_URL: postgresql+asyncpg://app:app@db:5432/app
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-console}
+    volumes:
+      - ./backend/app:/srv/app:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    environment:
+      # Vite proxies /api to the backend (see vite.config.ts), so the browser
+      # never needs to know the backend URL and there is no CORS in dev.
+      BACKEND_ORIGIN: http://backend:8000
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./frontend/src:/srv/src:ro
+      - ./frontend/index.html:/srv/index.html:ro
+      - ./frontend/public:/srv/public:ro
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

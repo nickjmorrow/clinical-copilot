@@ -1,0 +1,36 @@
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+# .env.prod matches none of the patterns above — it is not `.env`, and it is
+# not `*.local`. It holds a database password and an API key, so it is named
+# explicitly rather than left to a glob that happens not to cover it.
+.env.prod
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Generated Synthea export — see scripts/generate-synthea.sh
+data/
+
+# Generated data. `scripts/generate-synthea.sh` writes a population here; the loader
+# reads it. A test fixture — a gzipped subset of one — is committed under
+# backend/tests/support/synthea/ instead.
+backend/data/

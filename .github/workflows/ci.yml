@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Two independent jobs rather than one. A frontend typo should not cost you the
+# backend signal, and they run in parallel for free.
+#
+# Each job installs dependencies and then hands off to `scripts/check.sh`, which
+# is the SAME script the pre-commit hook runs. A hook that checks something
+# different from CI is worse than no hook — it teaches you to trust a green that
+# does not mean anything. The cost is that a failure is reported by the script
+# rather than as a per-step annotation; the script names every check it ran and
+# lists the ones that failed, which is close enough.
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # Same major as docker-compose. `for update skip locked` and
+        # LISTEN/NOTIFY are ancient, so a minor difference would not matter —
+        # pinning anyway makes moving it a decision rather than an accident.
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_ADMIN_DSN: postgresql://app:app@localhost:5432/postgres
+      # Turns "no database, so I skipped the integration suite" from a note into
+      # a failure. Without it a Postgres service that failed to start would make
+      # CI green while the queue and bus tests never ran.
+      CHECK_REQUIRE_DB: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      # --locked fails if uv.lock is stale rather than quietly resolving
+      # something that only exists in CI. Run `uv lock` and commit it when you
+      # add a dependency.
+      - run: uv sync --locked --group dev
+        working-directory: backend
+
+      # ruff check, ruff format --check, basedpyright, pytest.
+      #
+      # No ANTHROPIC_API_KEY, and that is the point: the fake provider means
+      # nothing in this suite reaches the network. If a test ever needs a real
+      # key it belongs in a separate, manually triggered workflow.
+      - name: Checks
+        run: scripts/check.sh backend
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `version:` — it reads `packageManager` from frontend/package.json, so
+      # CI, the Dockerfile and your machine all run the same pnpm.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
+      # eslint, prettier --check, tsc, vitest, and `vite build` — which is not
+      # redundant with tsc: it proves the bundle actually resolves and builds.
+      - name: Checks
+        run: scripts/check.sh frontend

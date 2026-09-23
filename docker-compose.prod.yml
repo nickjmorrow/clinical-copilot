@@ -1,0 +1,142 @@
+# The PRODUCTION stack. `docker-compose.yml` is the development one.
+#
+#   docker compose -f docker-compose.prod.yml up --build -d
+#
+# What differs, and why each one matters:
+#
+#   * The frontend is a BUILT BUNDLE served by nginx, not a dev server. nginx
+#     also proxies /api to the backend, which is what reproduces Vite's dev
+#     proxy — without it the bundle has no route to the API at all, because the
+#     client calls /api on its own origin by design.
+#   * No source mounts. The image is the artifact; a bind mount would mean the
+#     thing you tested is not the thing that runs.
+#   * No hot reload, and the backend runs as an unprivileged user.
+#   * restart: unless-stopped everywhere, so a crash or a reboot recovers.
+#   * Healthchecks on everything, including the worker, which has no HTTP port
+#     and so proves liveness by touching a file once per loop pass.
+#
+# Still missing, deliberately, because they depend on where you deploy: TLS
+# (terminate it at your platform's load balancer or put Caddy in front),
+# secrets management, log shipping, and backups.
+name: clinical-copilot-prod
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER_is_required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD_is_required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB_is_required}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Deliberately NOT published. Nothing outside this network needs it, and the
+    # development stack exposing 5433 is a convenience, not a pattern to copy.
+
+  # Runs to completion before anything else starts. A failed migration stops the
+  # deploy here rather than leaving a half-started app pointed at the wrong
+  # schema.
+  migrate:
+    build:
+      context: ./backend
+      target: production
+    restart: 'no'
+    command: ['alembic', 'upgrade', 'head']
+    environment:
+      DATABASE_URL: &database_url >-
+        postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      LOG_FORMAT: json
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      target: production
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: *database_url
+      # The API never talks to the model — only the worker does — so it does not
+      # need a key. Keeping it out of this environment is not tidiness: it is
+      # one fewer process that can leak one.
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: json
+      CORS_ORIGINS: ${PUBLIC_ORIGIN:-http://localhost}
+      # Public mode, on by default because this file is for a deployment
+      # anyone can open — see app/config.py. Each browser gets its own
+      # anonymous identity and no roles; the curator surfaces stay closed.
+      # Turn it off only for a private deployment behind OIDC.
+      VISITOR_MODE: ${VISITOR_MODE:-true}
+      VISITOR_COOKIE_SECURE: ${VISITOR_COOKIE_SECURE:-true}
+      # The ceilings on what that costs. Messages per visitor per hour, and
+      # input + output tokens across everyone per UTC day. Enforced by the API
+      # when a message is sent; set a spend limit in the Anthropic console too,
+      # which is the one that cannot be overshot.
+      MESSAGES_PER_HOUR: ${MESSAGES_PER_HOUR:-30}
+      DAILY_TOKEN_BUDGET: ${DAILY_TOKEN_BUDGET:-2000000}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    build:
+      context: ./backend
+      target: production
+    restart: unless-stopped
+    command: ['python', '-m', 'app.worker']
+    environment:
+      DATABASE_URL: *database_url
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY_is_required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: json
+      # Where `python -m app.seed` looks when `--from` is not given — see
+      # `app/config.py`. Read-only: seeding writes to Postgres, never back to
+      # the export. This is the single-server answer to "how does production
+      # get seeded": the export lives on the same host as the compose file and
+      # is bind-mounted in, the same way dev does it — scripts/deploy.sh copies
+      # it there. A platform where the CSV export and the containers do not
+      # share a filesystem (most managed ones) would need the seed step to
+      # fetch it from object storage instead.
+      SYNTHEA_CSV_DIR: /srv/data/synthea/csv
+    volumes:
+      - ./backend/data:/srv/data:ro
+    healthcheck:
+      # "Did a loop pass finish in the last two minutes." A process-liveness
+      # check would be theatre — Docker restarts a process that exits anyway —
+      # and this catches the case that actually needs catching: alive but stuck.
+      test: ['CMD-SHELL', 'find /tmp/worker-alive -mmin -2 | grep -q .']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    restart: unless-stopped
+    ports:
+      # 127.0.0.1 when something on the same host terminates TLS in front of
+      # this — scripts/deploy.sh sets it. Published on every interface, the
+      # plain-HTTP port stays reachable from outside even behind a firewall,
+      # because Docker writes its own iptables rules ahead of ufw's.
+      - '${PUBLIC_BIND_ADDRESS:-0.0.0.0}:${PUBLIC_PORT:-80}:80'
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  db_data:

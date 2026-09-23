@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+#
+# Runs the checks before a commit is made.
+#
+# Enable it once per clone:
+#
+#     git config core.hooksPath .githooks     # or run scripts/setup.sh
+#
+# Git does not version .git/hooks, which is why this lives in a directory that
+# IS versioned and is pointed at by one config line. Everyone gets the same hook
+# and it can be reviewed like anything else.
+#
+# ---------------------------------------------------------------------------
+#
+# Two decisions worth knowing before you are annoyed by them.
+#
+# **It checks the working tree, not the index.** If you staged a subset with
+# `git add -p`, this checks what is on disk rather than what you are about to
+# commit. The correct fix is to stash everything unstaged, run, and restore —
+# and a stash-and-restore that goes wrong in the middle of a commit is a good
+# way to lose work you cannot get back. CI checks the real commit; this is an
+# early warning, and the trade is deliberate.
+#
+# **It only checks the halves you touched,** and it uses --fast, so it does not
+# need a database and does not rebuild the bundle. It is the fast subset of the
+# same script CI runs, not a different set of rules.
+#
+# `git commit --no-verify` skips it. That is a legitimate thing to do on a
+# work-in-progress commit; CI is what makes it safe.
+
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 1
+
+STAGED="$(git diff --cached --name-only --diff-filter=ACMR)"
+[ -z "$STAGED" ] && exit 0
+
+ARGS=()
+grep -qE '^backend/'   <<<"$STAGED" && ARGS+=(backend)
+grep -qE '^frontend/'  <<<"$STAGED" && ARGS+=(frontend)
+
+# Nothing in either tree — a docs or compose commit. Nothing to run.
+if [ ${#ARGS[@]} -eq 0 ]; then
+  exit 0
+fi
+
+# Both halves staged: ask for everything rather than passing two targets.
+if [ ${#ARGS[@]} -eq 2 ]; then
+  ARGS=(all)
+fi
+
+if ! scripts/check.sh "${ARGS[@]}" --fast; then
+  cat >&2 <<'MSG'
+
+Commit aborted: the checks above failed.
+
+  scripts/check.sh --fast        run them again
+  cd backend  && uv run ruff format app tests && uv run ruff check --fix app tests
+  cd frontend && pnpm lint:fix && pnpm format
+
+  git commit --no-verify         commit anyway (CI will still run)
+MSG
+  exit 1
+fi
