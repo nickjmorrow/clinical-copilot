@@ -14,7 +14,7 @@ The patient set is two things concatenated, not one:
 **The anchors** — found by querying the live-seeded dev database for
 patients who actually sit on a specific edge (running example, contextual
 tier, unmeasured eGFR, high-tier-but-not-active, ...), the way
-SEMANTIC_LAYER.md asks for: found, not designed. Each one is documented below
+docs/SEMANTIC_LAYER.md asks for: found, not designed. Each one is documented below
 with the real evidence that earned it a place, because a future reader
 re-picking anchors needs to know what each one was *for*, not just that it
 matched a query once.

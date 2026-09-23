@@ -11,7 +11,7 @@ free to think of — so the bar for being in this file is that the reasoning
 survives being read back in three months.
 
 Two rules, borrowed from [CONVENTIONS.md § What is deliberately
-missing](./CONVENTIONS.md#what-is-deliberately-missing), which this file is the long
+missing](../CONVENTIONS.md#what-is-deliberately-missing), which this file is the long
 form of:
 
 - **Delete an entry the day it ships.** A gap list that still claims something
@@ -34,10 +34,10 @@ Worth stating first, because the gaps below only make sense against it.
 
 The semantic layer is no longer *"a set of boolean filters over one entity."*
 `clinical_definitions` holds three kinds of row now — filters, measures,
-dimensions — nineteen of them; a filter's predicate can be composed with
+dimensions — twenty of them; a filter's predicate can be composed with
 `all_of`/`any_of`/`not` and can reference another filter by name, not just AND
 a flat list; the assembler has a real `GROUP BY` path, over a second entity
-(medications, not just patients) as of the multi-entity work in § 11; and
+(medications, not just patients) — see § 11; and
 there is a working editor with validation, preview, versioned history and
 synonym-conflict detection sitting in front of all of it. Five of the six
 things a Zenlytic/LookML/Cube-shaped semantic layer has that a boolean-filter
@@ -82,8 +82,8 @@ everywhere below) now makes cheap to do anywhere. The `system` column on
 still unsurfaced past the raw code — attributing an *individual value* to its
 code system is the same shape of question as "why is this patient not in the
 cohort" (§15), which
-was explicitly declined this round, so it stayed out rather than reopening
-that boundary through a different door.
+is deliberately out of scope, so it stays out rather than reopening that
+boundary through a different door.
 
 **The answer — shipped.** Every `ClinicalAnswer` and `BrowseResult` now
 carries `dataset: DatasetProvenance | None`, populated at the same place the
@@ -109,7 +109,8 @@ form controls per predicate/measure/dimension shape — not a raw JSON box, and
 not the chat panel's deliberately-withheld view. `PredicateEditor` recurses for
 `all_of`/`any_of`/`not`; version and `updatedBy` show on every definition;
 history (who, when, why) lists at the bottom. Reached via "Definitions" in the
-sidebar (`/definitions`), gated `RequireReviewer`/`RequireCurator`.
+sidebar (`/definitions`). Anyone may read it — the same form, disabled, for
+anyone without the curator role — and every write is `RequireCurator`.
 
 Not fully built: rendering a predicate as an *English sentence* alongside the
 form. The structured editor arguably does more for a curator than prose would,
@@ -134,7 +135,7 @@ always did; this is the general case, reachable from any chat answer.
 
 **A governed table browser for a human — shipped.** `GET /clinical/patients`
 (`app/api/routes/cohort.py`, `clinical_query_service.browse_patients`) and
-`PatientBrowser` in the frontend, behind a "Browse patients" header button.
+`PatientBrowser` in the frontend, reached from "Patients" in the sidebar.
 The one genuinely new piece, next to the drilldown: no terms, no question,
 no definitions resolved at all — `assembler.browse_patients_query` is a
 deliberate, explicitly-named exception to `patient_condition`'s refusal of an
@@ -162,7 +163,7 @@ one blessed reader of clinical tables that is not the assembler).
 
 ### 4. Visualisation artifacts
 
-**Shipped.** A tool result's aggregate rows fold through a new pure module,
+**Shipped.** A tool result's aggregate rows fold through a pure module,
 `frontend/src/chart.ts` (`toChartData`), into a horizontal bar chart
 (`Chart.tsx`) — one section per measure, rendered in `ToolCard`'s result — open
 by default, above the collapsed arguments and SQL — and reused as-is in `SavedQuestionResult` for a saved question's
@@ -190,7 +191,7 @@ automatic anywhere else.
 join fan-out across prescriptions. `find_patients`'s `measures`/`group_by`
 arrays are how the model reaches any of it; leaving both empty is still a
 plain cohort listing. This was the entry everything else waited on, and it is
-why so much of the rest of this list closed in the same phase.
+why so much of the rest of this list could close once it had.
 
 ### 6. Editing the model without a migration
 
@@ -252,7 +253,7 @@ only the first is built.
 **Questions about medications, not just patients — shipped.**
 `clinical_definitions.entity` (`patient`/`medication`/`observation`) existed
 from the start but was pure decoration — stored, never read by anything that
-built a query. It is load-bearing now: a new `MedicationName` dimension and
+built a query. It is load-bearing now: a `MedicationName` dimension and
 `assembler.medication_aggregate_query()` (FROM prescriptions/medications,
 never FROM patients) let a question be about drugs directly, and
 `clinical_query_service` routes on the resolved dimension's `entity` to
@@ -320,10 +321,10 @@ a *relationship* going wrong, not a single term drifting on its own.
 ### 14. The unresolved-term report
 
 **Shipped.** `GET /api/audit/unresolved-terms` (`app/api/routes/audit.py`) and
-`UnresolvedTermsPanel` in the frontend, reached from a header button beside
-"Saved questions". The service-level read (`audit_service.unresolved_term_report`
+`UnresolvedTermsPanel` in the frontend, reached from "Unresolved terms" in the
+sidebar. The service-level read (`audit_service.unresolved_term_report`
 — grouped by raw question, ranked by frequency, exactly as this entry always
-described) predated this update and had no caller; the work here was the
+described) existed first, with no caller; what made it a feature was the
 route, the schema, the page, and the tests neither had. Gated `RequireReviewer`
 (curator or auditor), the same read-side guard the definitions editor uses —
 a curator deciding what to define next, not something an ordinary chat
@@ -345,8 +346,8 @@ with nothing behind it. `owner` and `reviewed_at` are columns on
 `clinical_definitions` and travel over the API (`DefinitionOut.owner`/
 `.reviewedAt`), but `DefinitionForm` does not surface or edit either one, and
 nothing anywhere ever sets `reviewed_at` — there is no "mark reviewed"
-action. Nineteen rows written in one phase still do not need this; it is
-worth building before a second curator shows up, not after.
+action. Twenty rows written together, by one author, do not need this yet; it
+is worth building before a second curator shows up, not after.
 
 ## Delivery
 
@@ -360,8 +361,8 @@ term name that will not resolve), run on demand, which re-asks the
 definitions layer fresh every time rather than replaying a stored answer, and
 renders through the same `chart.ts`/`Chart.tsx` an aggregate chat answer does.
 
-**Dashboard — shipped.** `Dashboard.tsx`/`DashboardCard.tsx`, reached from a
-"Dashboard" button beside "Saved questions": every saved question, run fresh
+**Dashboard — shipped.** `Dashboard.tsx`/`DashboardCard.tsx`, reached from
+"Dashboard" in the sidebar: every saved question, run fresh
 on load and shown together — exactly the phrase this entry used, "a set of
 saved questions on one page", with no new backend route (the existing list
 and per-question run endpoints were already the whole API it needed). This
@@ -374,7 +375,7 @@ surfaced that rather than requiring §11's harder half first.
 Still missing: a digest (the same page, delivered rather than opened) and a
 schedules UI. `/api/schedules` is unchanged: it exists, works, and is
 unreachable from the browser, deliberately — see
-[CONVENTIONS.md](./CONVENTIONS.md#what-is-deliberately-missing).
+[CONVENTIONS.md](../CONVENTIONS.md#what-is-deliberately-missing).
 
 ### 18. Export, and treating it as a governed act
 
@@ -423,7 +424,7 @@ decorative — verified with a test that grants `auditor` a column via
 `monkeypatch`, confirms it reads through the real `find_patients`-shaped path,
 and confirms an ungranted role still can't. The identity seam itself is
 still the easy half whenever a second real user shows up — one function, see
-[CONVENTIONS.md § Identity](./CONVENTIONS.md#identity).
+[CONVENTIONS.md § Identity](../CONVENTIONS.md#identity).
 
 ## Deliberately not on this list
 

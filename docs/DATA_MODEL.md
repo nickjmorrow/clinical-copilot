@@ -1,8 +1,8 @@
 # The data model
 
-Twelve clinical-domain tables plus the four the chat app itself uses. The
-source of truth is [`backend/app/models.py`](./backend/app/models.py) —
-Alembic generates migrations by diffing it, so anything not declared there
+Seventeen tables: twelve for the clinical domain, and five the chat app itself
+uses. The source of truth is [`backend/app/models.py`](../backend/app/models.py)
+— Alembic generates migrations by diffing it, so anything not declared there
 does not exist.
 
 This file is the picture. When they disagree, `models.py` is right.
@@ -118,16 +118,17 @@ the other tables rather than joining to them. `app/clinical/assembler.py` is
 what connects a definition to the columns it talks about, and it is the only
 thing that does.
 
-Two tables sit beside the diagram rather than in it, because both are satellite
-records rather than part of the running example: **`clinical_definition_history`**
-is one append-only row per change to a definition — not a foreign key to
+Three tables sit beside the diagram rather than in it, because all three are
+satellite records rather than part of the running example:
+**`clinical_definition_history`** is one append-only row per change to a
+definition — not a foreign key to
 `clinical_definitions.id`, deliberately, so deleting a term does not delete the
 record of what it used to say. **`saved_questions`** stores `terms`/`measures`/
 `group_by` by name, never rows or SQL, so reopening one re-runs it through
-whatever the definitions say today. **`user_roles`** is the row-level-auth seam:
-`scope_states`, a list of US states a user's queries are confined to (`NULL`
-means unconfined), applied by the assembler the same way every other predicate
-is.
+whatever the definitions say today. **`user_roles`** is the authorization seam:
+`roles`, which open the curator and auditor surfaces, and `scope_states`, a
+list of US states a user's queries are confined to (`NULL` means unconfined),
+applied by the assembler the same way every other predicate is.
 
 ## The five that carry the design
 
@@ -236,7 +237,7 @@ union all select 'audit rows', count(*) from query_audit;"
 | clinical_definitions | 20 (11 filters, 4 measures, 5 dimensions) |
 | audit rows | however many questions have been asked since the last reset |
 
-The nineteen defined terms and what they mean:
+The twenty defined terms and what they mean:
 
 ```bash
 docker compose exec db psql -U app -d app -c \
@@ -260,18 +261,31 @@ fixture with the same shape:
 | `impaired renal function` ∩ `nephrotoxic medication` (the running example) | 76 |
 | + `elderly` | 35 |
 | `elderly` ∩ `high-risk nephrotoxic medication` | 9 |
-| `hyperkalemia` ∩ `renin-angiotensin blocker` | **0** — a real finding, not a bug; see WRITEUP.md |
+| `hyperkalemia` ∩ `renin-angiotensin blocker` | **0** — a real finding, not a bug; see [WRITEUP.md](./WRITEUP.md) |
 
 The eleven anchor patients in the **test** fixture — each found by querying the
 live-seeded dataset for a specific edge, not hand-designed — are documented in
-[`scripts/build-test-fixture.py`](./scripts/build-test-fixture.py) with the
+[`scripts/build-test-fixture.py`](../scripts/build-test-fixture.py) with the
 evidence that earned each one a place, and named in
-[`backend/tests/support/fixture.py`](./backend/tests/support/fixture.py).
+[`backend/tests/support/fixture.py`](../backend/tests/support/fixture.py).
 
 ## The app's own tables
 
-`conversations`, `event_records`, `tasks` and `schedules` come from the
-template and are unchanged. `event_records` is the append-only transcript —
+`conversations`, `event_records`, `tasks` and `schedules` began as the
+template's and have grown since. `event_records` is the append-only transcript —
 one row per user message, assistant response, tool call and tool result, with
 everything on screen derived by replaying it. See
-[CONVENTIONS.md § The transcript](./CONVENTIONS.md#the-transcript).
+[CONVENTIONS.md § The transcript](../CONVENTIONS.md#the-transcript).
+`conversations` gained `pinned_at`, `archived_at` and `title_custom` for the
+sidebar's controls ([CONVENTIONS.md § Conversation
+controls](../CONVENTIONS.md#conversation-controls)), and `tasks` gained
+`request_id`, so a turn's worker logs join to the API request that enqueued it.
+
+**`usage_events`** is the fifth, and the ledger the cost ceilings are counted
+from: one row per metered use — `kind` is `message` (a user sent one, `amount`
+1) or `tokens` (the worker recorded a model call, `amount` its input plus
+output tokens) — with `user_id` and `created_at`. It has no foreign key to
+anything a user can delete, deliberately: counted from the transcript instead,
+deleting a conversation would reset a visitor's hourly limit and hand back the
+tokens spent in it. Every read and write goes through
+`services/usage_service.py`.

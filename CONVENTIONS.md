@@ -60,7 +60,7 @@ the `WHERE` is not printed there, it is not real.
 
 ```
 backend/alembic/       Migrations. `versions/` is the schema's history.
-backend/tests/         pytest. unit/, integration/, structure/, support/.
+backend/tests/         pytest. unit/, integration/, structure/, live/, support/.
 frontend/nginx.conf    Serves the built bundle and proxies /api in production.
 backend/app/
   main.py              App wiring only. No logic.
@@ -101,7 +101,7 @@ backend/app/
     assembler.py       Validated predicates -> parameterised SQL. Writes ALL of it.
   seed/
     synthea.py          Parses the raw Synthea export into rows seed_service inserts.
-    reference_data.py   Static reference tables (units, categories) seeded once.
+    reference_data.py   The curated clinical definitions: every term, its logic and notes.
     annotations.py      Curated clinical judgement (e.g. nephrotoxic tiers), reviewable.
   llm/
     types.py           Provider-neutral events and blocks. THE SEAM.
@@ -285,12 +285,12 @@ idea that happens to be long. Two were, and both have been split:
 
 The definitions layer has since outgrown that line, and the sizes say so:
 `services/definition_service.py` (~1,000 lines) and
-`services/clinical_query_service.py` (~900) are now the largest files in
-`app/`. `models.py` (~880) is the schema and `clinical/assembler.py` (~760)
+`services/clinical_query_service.py` (~770) are the largest service files in
+`app/`. `models.py` (~880) is the schema and `clinical/assembler.py` (~690)
 is one idea whose SQL is genuinely that long; those are fine. The two services
 are the next splits: the first holds validation, versioning and the model check,
 the second the resolve → guard → assemble → execute → audit path plus browsing
-and explanation — each more than one concern. That is the distinction to apply:
+and previews — each more than one concern. That is the distinction to apply:
 **length is only a problem when it is concealing a second concern.** A long
 file that does one thing is fine; a 200-line file doing three is not.
 
@@ -375,8 +375,8 @@ deployment anyone can open. `api/middleware.VisitorMiddleware` gives each
 browser a random id in an HttpOnly cookie, and that — prefixed `visitor:`, so
 it can never equal any other id — is the user. Because every query is already
 scoped by user id, visitors are isolated from each other with no other change,
-and because a visitor holds no roles, every curator and auditor surface stays
-closed.
+and because a visitor holds no roles, every write to the definitions and every
+curator-only page stays closed.
 
 Adding real sign-in is a change to that one function, because nothing below it
 wants anything but a user id. It was built once — OIDC, verified against the
@@ -389,6 +389,15 @@ Scope by `user_id` **in the WHERE clause**, never as an assertion afterwards. A
 row belonging to someone else must be indistinguishable from one that does not
 exist. Every query goes through `get_current_user()` in `api/deps.py`, which
 is why each of its modes was a one-function change.
+
+**What a role gates is what could do harm, not what could be seen.** Reading
+the definitions — logic, rationale, history, the model check — is open to
+everyone, a visitor included: it is the hospital's vocabulary, not patient
+data, and showing it is what the project is for. Changing one is curator-only,
+and so is previewing a change, because a preview is a query against patient
+data. The unresolved-terms report is the exception on the read side, closed to
+anyone without a reviewing role: its rows are other people's questions,
+verbatim.
 
 **Anything that keeps spending after its author has gone is curator-only.** A
 schedule is the model running on a timer on the deployment's API key, so
@@ -419,9 +428,11 @@ do. `G201` still holds you to `.exception()` where a traceback *is* wanted.
 would demand one on every function and then argue about the mood of its first
 verb.
 
-basedpyright runs at **strict** on `app/`. The three suppressions left are all
-about other people's libraries — asyncpg ships no stubs, SQLAlchemy's `desc()`
-is partially generic — not about this code. `tests/` relaxes the annotation and
+basedpyright runs at **strict** on `app/`. The two suppressions left are both
+about other people's libraries, not this code: a runtime `isinstance` on a
+provider response the Anthropic SDK's types already promise, kept because the
+promise is the provider's and not ours, and a `None` check on a connection
+that asyncpg — which ships no stubs — can drop. `tests/` relaxes the annotation and
 private-access rules through an `executionEnvironments` block, because a test
 signature is fixtures in and `None` out, and a test reaching into a private
 helper is doing its job.
@@ -608,10 +619,11 @@ dataset, while "which patients" is a clinical query and goes through the
 definitions layer like everything else.
 
 That distinction is kept honest by a second structural test asserting the
-catalog never references `full_name`, `date_of_birth` or `mrn`. Widening the
-allowlist without it would turn "only the assembler reads patient data" into
-"only the assembler, and whatever else got added later". If the catalog ever
-needs an identifier, it is not a catalog any more.
+catalog never references `full_name`, `birth_date` or any of the other
+identifiers `patients` carries (`ssn`, `drivers`, `passport`, `address`).
+Widening the allowlist without it would turn "only the assembler reads patient
+data" into "only the assembler, and whatever else got added later". If the
+catalog ever needs an identifier, it is not a catalog any more.
 
 ## The transcript
 
@@ -1063,13 +1075,19 @@ checked now:
 | Routes do not build queries | backend |
 | Every service function takes an explicit `session` | backend |
 | Tool schemas are closed and every property is described | backend |
+| Every tool description is long enough to say when to call it | backend |
 | No registered tool raises on bad input | backend |
+| An unknown tool name is an error result, not an exception | backend |
 | Every `LLMStreamEvent` is handled by the worker | backend |
 | The TypeScript frame union matches what the backend sends | backend |
+| Every frame on the wire is emitted by some backend module | backend |
+| Only the assembler (plus `columns.py`, the seed and the catalog) touches the clinical tables | backend |
+| The catalog never reads an identifying column | backend |
 | `services/` imports neither `api/` nor `worker` | backend |
 | Only `main.py` imports `app.api` at all | backend |
 | Every `__init__.py` is empty but the tool registry | backend |
 | No literal Tailwind colour anywhere in `src/` | frontend |
+| The `@theme` block declares the tokens that rule points to | frontend |
 | The view model and `api/` import no React | frontend |
 | A component or hook file is named after what it exports | frontend |
 | Every top-level `.ts` module has a test beside it | frontend |

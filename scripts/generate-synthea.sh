@@ -7,7 +7,7 @@
 # docker-compose.prod.yml bind-mounts it from (`./backend/data:/srv/data:ro`).
 # Nothing is checked in: the export is about 380 MB.
 #
-# The numbers quoted in README.md and DEMO.md — 2,271 patients, 76 on a
+# The numbers quoted in README.md and docs/DEMO.md — 2,271 patients, 76 on a
 # nephrotoxic medication with impaired kidney function, and so on — come from
 # Synthea's rolling master build of 2026-08-18 with the default seed below.
 # The seed makes a run repeatable against one Synthea build; a newer build

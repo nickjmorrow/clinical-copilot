@@ -44,7 +44,7 @@ restricted.
 
 That panel is worth thirty seconds of the demo on its own. The definitions
 layer is the architecture, and without it on screen you are asking someone to
-take your word for it. Expand "why this threshold" on **hyperkalemia** — the
+take your word for it. Expand "why" on **hyperkalemia** — the
 rationale explains that raised potassium is the complication that actually
 limits ACE inhibitors in CKD, which is the setup for the clinical point at the
 end of this script.
@@ -53,9 +53,9 @@ end of this script.
 `clinical_definitions` rows, editable: create, preview against the real data,
 publish, and a version history per term. It is real and working end to end
 (create → preview → publish → appears in the model's own vocabulary →
-versioned → delete, all exercised against the live API), but it is new this
-phase and still awaiting review, so treat it as "here if you want to show it"
-rather than a scripted step.
+versioned → delete, all exercised against the live API), but it is a curator's
+tool rather than part of the argument, so treat it as "here if you want to
+show it" rather than a scripted step.
 
 ## The four questions
 
@@ -107,9 +107,8 @@ the model filtered its own context and invented `> 65`. It had never been told
 > What's the average eGFR for patients with impaired kidney function, broken
 > down by age band?
 
-This is the newest capability, and it is a different query *shape*, not a
-filtered list: naming a measure (`average eGFR`) and a dimension (`age band`)
-turns the same resolved cohort into a `GROUP BY`. The real numbers this
+This is a different query *shape*, not a filtered list: naming a measure
+(`average eGFR`) and a dimension (`age band`) turns the same resolved cohort into a `GROUP BY`. The real numbers this
 returns:
 
 | age band | average eGFR |
@@ -182,12 +181,12 @@ list is not an audit trail.
 cd backend && uv run pytest tests/integration/test_eval.py -v
 ```
 
-Nineteen cases, each carrying a `pins` line saying what breaks if it fails, so
+Twenty cases, each carrying a `pins` line saying what breaks if it fails, so
 a failure reads "the contextual tier stopped being excluded" rather than
 "expected 76, got 75". They run against a small, committed, real fixture —
 `backend/tests/support/synthea/` — rather than the full export, so the suite
 does not need a 1.77-million-row load to gate a commit. See
-[CONVENTIONS.md § Where tests go](./CONVENTIONS.md#where-tests-go) for why the fixture
+[CONVENTIONS.md § Where tests go](../CONVENTIONS.md#where-tests-go) for why the fixture
 is a subset in the same format rather than a format of its own.
 
 The four `live_only` cases in the same file need a real model and run
@@ -245,7 +244,9 @@ as the response body grew. A buffered SSE response is indistinguishable from an
 application bug from the outside, which is why reading `nginx.conf` and
 believing it does not count.
 
-Stop the dev stack first; both bind the same host ports.
+It is its own Compose project with its own database volume, and publishes only
+`PUBLIC_PORT` (80 unless set), so it can run beside the dev stack as long as
+that port is free.
 
 **Seeding production.** `docker-compose.prod.yml` bind-mounts
 `./backend/data:/srv/data:ro` into the `worker` service and sets
@@ -255,7 +256,7 @@ local export (`scripts/deploy.sh` does all of this for you):
 ```bash
 scripts/generate-synthea.sh                                          # once, on the host
 docker compose -f docker-compose.prod.yml --env-file .env.prod \
-  run --rm --entrypoint python worker -m app.seed
+  run --rm worker python -m app.seed
 ```
 
 This is the answer for a deploy where the containers and the CSV export share a
