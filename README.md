@@ -89,6 +89,14 @@ brought — and the ones this project added — live in [CONVENTIONS.md](./CONVE
     it and what it is made of, and the SQL behind it is one click away.</td>
     <td>On a phone, the sidebar becomes a menu.</td>
   </tr>
+  <tr>
+    <td colspan="2"><img alt="A definition as anyone can read it: its plain-English description, the clinical rationale, synonyms, and its logic as structure — here, two other defined terms combined with AND" src="docs/screenshots/definition.png"></td>
+  </tr>
+  <tr>
+    <td colspan="2">What a term means is a row, not a prompt. Anyone can open a definition
+    and read exactly what the app applies — the logic, the reasoning, and every
+    past version; only a curator can change one.</td>
+  </tr>
 </table>
 
 ## Quick start
