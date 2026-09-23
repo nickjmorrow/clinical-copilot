@@ -156,7 +156,12 @@ say "HTTPS"
 # project never touches another's. flush_interval -1 passes Server-Sent Events
 # through as they are written. HSTS lives here because Caddy is the only thing
 # that knows the site is HTTPS.
-remote "cat > /etc/caddy/sites/$app.caddy && caddy validate --config /etc/caddy/Caddyfile >/dev/null && systemctl reload caddy" <<SITE
+#
+# Restart, not reload. The Caddy that Ubuntu packages (2.6, built with a much
+# newer Go) panics on every live reload — sometimes after reporting success —
+# and exits, taking every site on the server down until someone starts it
+# again. A restart is a second or two of refused connections for each site.
+remote "cat > /etc/caddy/sites/$app.caddy && caddy validate --config /etc/caddy/Caddyfile >/dev/null && systemctl restart caddy" <<SITE
 $domain {
 	reverse_proxy 127.0.0.1:$port {
 		flush_interval -1
