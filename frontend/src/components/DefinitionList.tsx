@@ -4,6 +4,7 @@ import { errorMessage, isForbidden } from 'src/api/client';
 import { checkModel, type Definition, definitionKeys, listDefinitions } from 'src/api/definitions';
 import InlineError from 'src/components/InlineError';
 import NewItemLink from 'src/components/NewItemLink';
+import useRoles from 'src/hooks/useRoles';
 import { paths } from 'src/paths';
 import { SIDEBAR_HEADING } from 'src/styles';
 
@@ -33,6 +34,7 @@ export default function DefinitionList() {
   // `new`, an id, or null for nothing chosen — straight from the address.
   const { selection = null } = useParams();
   const definitions = useQuery({ queryFn: listDefinitions, queryKey: definitionKeys.all });
+  const { canCurate } = useRoles();
   const warnings = useQuery({ queryFn: checkModel, queryKey: definitionKeys.modelCheck });
 
   // Nothing to list for someone without the role; the page beside this says why.
@@ -42,13 +44,15 @@ export default function DefinitionList() {
 
   return (
     <>
-      <div className={'p-2'}>
-        <NewItemLink
-          isActive={selection === 'new'}
-          label={'+ New definition'}
-          to={paths.definitions('new')}
-        />
-      </div>
+      {canCurate && (
+        <div className={'p-2'}>
+          <NewItemLink
+            isActive={selection === 'new'}
+            label={'+ New definition'}
+            to={paths.definitions('new')}
+          />
+        </div>
+      )}
 
       {definitions.error ? (
         <div className={'px-2'}>
@@ -91,7 +95,7 @@ export default function DefinitionList() {
                           </span>
                         )}
                         {definition.status !== 'published' && (
-                          <span className={'shrink-0 text-[10px] text-ink-muted/80'}>
+                          <span className={'shrink-0 text-[10px] text-ink-muted'}>
                             {STATUS_LABEL[definition.status]}
                           </span>
                         )}

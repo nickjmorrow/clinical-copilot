@@ -39,13 +39,23 @@ interface Props {
  * Authorization); anything else can be retried.
  */
 export default function Chat({ composerRef, conversationId, onCreated }: Props) {
-  const { error, events, isStreaming, liveText, loadError, retryLoad, send, stop, thinkingText } =
-    useConversationStream(conversationId, onCreated);
+  const {
+    error,
+    events,
+    isLoading,
+    isStreaming,
+    liveText,
+    loadError,
+    retryLoad,
+    send,
+    stop,
+    thinkingText,
+  } = useConversationStream(conversationId, onCreated);
 
   if (loadError instanceof ApiError && loadError.status === 404) {
     return (
       <EmptyState
-        detail={'It may have been deleted. Start a new conversation from the menu.'}
+        detail={'It may have been deleted. "+ New conversation" starts another.'}
         title={'That conversation is not available.'}
       />
     );
@@ -65,6 +75,7 @@ export default function Chat({ composerRef, conversationId, onCreated }: Props) 
       <MessageList
         error={error}
         events={events}
+        isLoading={isLoading}
         isStreaming={isStreaming}
         liveText={liveText}
         onAsk={send}

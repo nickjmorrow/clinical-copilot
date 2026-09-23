@@ -7,7 +7,9 @@ import DefinitionForm from 'src/components/DefinitionForm';
 import DefinitionList from 'src/components/DefinitionList';
 import EmptyState from 'src/components/EmptyState';
 import LoadFailed from 'src/components/LoadFailed';
+import Loading from 'src/components/Loading';
 import PickFromList from 'src/components/PickFromList';
+import useRoles from 'src/hooks/useRoles';
 import { paths } from 'src/paths';
 
 /**
@@ -25,29 +27,45 @@ import { paths } from 'src/paths';
  *
  * Keyed by the selection so switching definitions remounts the form instead
  * of an effect syncing props into state — see CONVENTIONS.md > Frontend.
+ *
+ * Anyone may read a definition; only a curator gets a form that writes. The
+ * server enforces that either way — this decides what is worth showing.
  */
 export default function DefinitionsEditor() {
   // `new`, an id, or null for nothing chosen — straight from the address.
   const { selection = null } = useParams();
   const navigate = useNavigate();
   const definitions = useQuery({ queryFn: listDefinitions, queryKey: definitionKeys.all });
+  const { canCurate, isKnown } = useRoles();
 
   if (isForbidden(definitions.error)) return <CuratorsOnly />;
 
   if (selection === null) {
     return (
       <PickFromList list={<DefinitionList />}>
-        <EmptyState
-          detail={
-            'Every change here is versioned — see the history at the bottom of a definition once you have made one.'
-          }
-          title={'Pick a definition to edit, or start a new one.'}
-        />
+        {canCurate ? (
+          <EmptyState
+            detail={
+              'Every change here is versioned — see the history at the bottom of a definition once you have made one.'
+            }
+            title={'Pick a definition to edit, or start a new one.'}
+          />
+        ) : (
+          <EmptyState
+            detail={
+              "Each is the hospital's own answer to what a term means: the exact logic a question is answered with, the reasoning behind it, and every past version."
+            }
+            title={'Pick a definition to see what it means.'}
+          />
+        )}
       </PickFromList>
     );
   }
 
-  if (definitions.isPending) return null;
+  // Creating is a curator's. Wait for the roles rather than flash the notice.
+  if (selection === 'new' && !canCurate) return isKnown ? <CuratorsOnly /> : null;
+
+  if (definitions.isPending) return <Loading />;
   if (definitions.error) {
     return (
       <LoadFailed
@@ -80,6 +98,7 @@ export default function DefinitionsEditor() {
     <DefinitionForm
       definition={selected}
       filterTerms={filterTerms}
+      isReadOnly={!canCurate}
       key={selection}
       onDeleted={() => {
         void navigate(paths.definitions());

@@ -4,6 +4,8 @@ import { isForbidden } from 'src/api/client';
 import CuratorsOnly from 'src/components/CuratorsOnly';
 import EmptyState from 'src/components/EmptyState';
 import LoadFailed from 'src/components/LoadFailed';
+import Loading from 'src/components/Loading';
+import Page from 'src/components/Page';
 import { formatDateTime } from 'src/format';
 
 /**
@@ -32,8 +34,9 @@ export default function UnresolvedTermsPanel() {
       />
     );
   }
+  if (terms.isPending) return <Loading />;
 
-  if (terms.data?.length === 0) {
+  if (terms.data.length === 0) {
     return (
       <EmptyState
         detail={'Every question asked so far has resolved to a defined term.'}
@@ -43,13 +46,14 @@ export default function UnresolvedTermsPanel() {
   }
 
   return (
-    <div className={'h-full overflow-y-auto px-6 py-5'}>
-      <div className={'mx-auto max-w-3xl'}>
-        <h2 className={'text-sm font-semibold tracking-tight text-ink'}>Unresolved terms</h2>
-        <p className={'mt-1 mb-4 text-xs text-ink-muted'}>
-          Questions that stopped for a clarification because a term had no definition, most-asked
-          first. The top of this list is what to define next.
-        </p>
+    <Page
+      description={
+        'Questions that stopped for a clarification because a term had no definition, most-asked first. The top of this list is what to define next.'
+      }
+      title={'Unresolved terms'}
+    >
+      {/* Scrolls sideways on its own rather than taking the page with it. */}
+      <div className={'overflow-x-auto'}>
         <table className={'w-full border-collapse text-xs'}>
           <thead>
             <tr className={'border-b border-ink/10 text-left text-ink-muted'}>
@@ -60,7 +64,7 @@ export default function UnresolvedTermsPanel() {
             </tr>
           </thead>
           <tbody>
-            {terms.data?.map((entry) => (
+            {terms.data.map((entry) => (
               <tr className={'border-b border-ink/5'} key={entry.rawQuestion}>
                 <td className={'py-2 pr-4 text-ink'}>{entry.rawQuestion}</td>
                 <td className={'py-2 pr-4 text-ink-muted tabular-nums'}>{entry.count}×</td>
@@ -71,6 +75,6 @@ export default function UnresolvedTermsPanel() {
           </tbody>
         </table>
       </div>
-    </div>
+    </Page>
   );
 }

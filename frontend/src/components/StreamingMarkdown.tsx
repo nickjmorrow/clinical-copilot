@@ -1,5 +1,5 @@
 import Caret from 'src/components/Caret';
-import Markdown from 'src/components/Markdown';
+import LazyMarkdown from 'src/components/LazyMarkdown';
 import useRevealedText from 'src/hooks/useRevealedText';
 import { splitStreamingMarkdown } from 'src/markdown';
 
@@ -24,7 +24,7 @@ export default function StreamingMarkdown({ text }: Props) {
 
   return (
     <>
-      {stable && <Markdown text={stable} />}
+      {stable && <LazyMarkdown text={stable} />}
       <p className={'my-2 leading-relaxed whitespace-pre-wrap first:mt-0 last:mb-0'}>
         {tail}
         <Caret />

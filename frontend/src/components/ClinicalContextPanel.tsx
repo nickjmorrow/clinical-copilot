@@ -107,24 +107,24 @@ export default function ClinicalContextPanel({ onClose, onPickTerm }: Props) {
         <dl className={'mt-2 flex flex-col gap-1 text-[11px] text-ink-muted'}>
           <div className={'flex justify-between gap-2'}>
             <dt>Patients</dt>
-            <dd className={'text-ink'}>{dataset.patients}</dd>
+            <dd className={'text-ink'}>{dataset.patients.toLocaleString()}</dd>
           </div>
           <div className={'flex justify-between gap-2'}>
             <dt>Medications</dt>
-            <dd className={'text-ink'}>{dataset.medications}</dd>
+            <dd className={'text-ink'}>{dataset.medications.toLocaleString()}</dd>
           </div>
           <div className={'flex justify-between gap-2'}>
             <dt>Prescriptions</dt>
-            <dd className={'text-ink'}>{dataset.prescriptions}</dd>
+            <dd className={'text-ink'}>{dataset.prescriptions.toLocaleString()}</dd>
           </div>
           <div className={'flex justify-between gap-2'}>
             <dt>Observations</dt>
-            <dd className={'text-ink'}>{dataset.observations}</dd>
+            <dd className={'text-ink'}>{dataset.observations.toLocaleString()}</dd>
           </div>
           <div className={'mt-1 flex flex-col gap-0.5'}>
             <dt>Measurements tracked</dt>
             <dd className={'text-ink'}>
-              {dataset.observationCatalog.length} kinds — {SAMPLE_CATALOG_SIZE} of them:{' '}
+              {dataset.observationCatalog.length.toLocaleString()} kinds, including{' '}
               {dataset.observationCatalog
                 .slice(0, SAMPLE_CATALOG_SIZE)
                 .map((entry) => entry.display)
@@ -132,11 +132,11 @@ export default function ClinicalContextPanel({ onClose, onPickTerm }: Props) {
               {dataset.observationCatalog.length > SAMPLE_CATALOG_SIZE && (
                 <details className={'group mt-1 inline'}>
                   <summary
-                    className={
-                      'inline cursor-pointer text-[11px] text-ink-muted/80 hover:text-ink-muted'
-                    }
+                    className={'inline cursor-pointer text-[11px] text-ink-muted hover:text-ink'}
                   >
-                    …and the rest
+                    …and{' '}
+                    {(dataset.observationCatalog.length - SAMPLE_CATALOG_SIZE).toLocaleString()}{' '}
+                    more
                   </summary>
                   <p className={'mt-1 leading-relaxed'}>
                     {dataset.observationCatalog

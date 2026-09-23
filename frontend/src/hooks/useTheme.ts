@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 export type ThemePreference = 'dark' | 'light' | 'system';
 
-/** Shared with the inline script in index.html. Both read it; only this writes. */
+/** Shared with `public/theme.js`. Both read it; only this writes. */
 const STORAGE_KEY = 'theme';
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
@@ -43,7 +43,7 @@ function subscribeToSystem(onChange: () => void) {
  * The resolution happens here and the *result* goes on `<html>`, so `index.css`
  * carries one dark block instead of a `prefers-color-scheme` query it would
  * then need to exempt an explicit light choice from. The same rule is
- * duplicated in the inline script in index.html, which cannot import anything
+ * duplicated in `public/theme.js`, which cannot import anything
  * and has to run before React exists — keep the two in step.
  *
  * One consumer is assumed. Two would each hold their own `preference` and
@@ -65,7 +65,7 @@ export default function useTheme() {
   const resolved = preference === 'system' ? (isSystemDark ? 'dark' : 'light') : preference;
 
   // Synchronising with something outside React, which is what effects are for.
-  // Idempotent on mount: the inline script has already written this value.
+  // Idempotent on mount: `public/theme.js` has already written this value.
   useEffect(() => {
     document.documentElement.dataset.theme = resolved;
   }, [resolved]);

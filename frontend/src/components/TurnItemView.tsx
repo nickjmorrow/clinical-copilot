@@ -5,6 +5,8 @@ import ToolCard from 'src/components/ToolCard';
 import type { TurnItem } from 'src/turns';
 
 interface Props {
+  /** For an assistant item: the last thing said before the next message. */
+  isAnswerEnd: boolean;
   item: TurnItem;
 }
 
@@ -24,10 +26,10 @@ interface Props {
  * they meant literally disappear into emphasis — and it buys nothing, because
  * the person who wrote it is the person reading it back.
  */
-export default function TurnItemView({ item }: Props): ReactElement {
+export default function TurnItemView({ isAnswerEnd, item }: Props): ReactElement {
   switch (item.kind) {
     case 'assistant': {
-      return <AssistantMessage text={item.text} />;
+      return <AssistantMessage isAnswerEnd={isAnswerEnd} text={item.text} />;
     }
 
     case 'tool': {

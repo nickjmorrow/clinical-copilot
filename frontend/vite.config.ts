@@ -6,7 +6,24 @@ import react from '@vitejs/plugin-react';
 // step.
 import { defineConfig } from 'vitest/config';
 
+// The libraries every page needs, in a chunk of their own: a deploy that
+// changes only app code then leaves this file's hash — and every returning
+// browser's cached copy of it — alone. Named rather than "all of
+// node_modules" on purpose, so the markdown renderer's dependencies stay in
+// the chunk `LazyMarkdown` loads on demand instead of being pulled back in here.
+const VENDOR = ['/react/', '/react-dom/', '/scheduler/', '/react-router/', '/@tanstack/'];
+
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) =>
+          VENDOR.some((name) => id.includes(`/node_modules/${name.slice(1)}`))
+            ? 'vendor'
+            : undefined,
+      },
+    },
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     // Absolute imports from src/. Relative paths (`../../api/client`) stop

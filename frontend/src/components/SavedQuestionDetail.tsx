@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { errorMessage } from 'src/api/client';
 import { runSavedQuestion, type SavedQuestion } from 'src/api/savedQuestions';
 import Button from 'src/components/Button';
+import Page from 'src/components/Page';
 import SavedQuestionResult from 'src/components/SavedQuestionResult';
 import { describeQuestion } from 'src/format';
 import useSavedQuestionActions from 'src/hooks/useSavedQuestionActions';
@@ -26,7 +27,7 @@ export default function SavedQuestionDetail({ onDeleted, question }: Props) {
   const actions = useSavedQuestionActions();
   // A `useMutation` directly, not another wrapper through the shared hook —
   // `run` has exactly one caller (this component), and `question.id` is
-  // already fixed for the lifetime of this instance (`App` keys the panel by
+  // already fixed for the lifetime of this instance (`SavedQuestionsPanel` keys it by
   // it), so `mutationFn` closing over it needs no parameter passed at call
   // time.
   const run = useMutation({ mutationFn: () => runSavedQuestion(question.id) });
@@ -49,12 +50,8 @@ export default function SavedQuestionDetail({ onDeleted, question }: Props) {
   };
 
   return (
-    <div className={'flex h-full flex-col overflow-y-auto px-6 py-5'}>
-      <div className={'flex items-start justify-between gap-3'}>
-        <div>
-          <h2 className={'text-sm font-semibold tracking-tight text-ink'}>{question.name}</h2>
-          <p className={'mt-1 text-xs text-ink-muted'}>{describeQuestion(question)}</p>
-        </div>
+    <Page
+      actions={
         <Button
           className={'shrink-0'}
           danger={isConfirmingDelete}
@@ -63,12 +60,14 @@ export default function SavedQuestionDetail({ onDeleted, question }: Props) {
         >
           {isConfirmingDelete ? 'Really delete?' : 'Delete'}
         </Button>
-      </div>
-
-      {deletionError && <p className={'mt-2 text-xs text-danger'}>{deletionError}</p>}
+      }
+      description={describeQuestion(question)}
+      title={question.name}
+    >
+      {deletionError && <p className={'text-xs text-danger'}>{deletionError}</p>}
 
       <Button
-        className={'mt-4 self-start'}
+        className={'self-start'}
         disabled={run.isPending}
         onClick={() => run.mutate()}
         variant={'primary'}
@@ -76,13 +75,9 @@ export default function SavedQuestionDetail({ onDeleted, question }: Props) {
         {run.isPending ? 'Running…' : 'Run'}
       </Button>
 
-      {run.error && <p className={'mt-3 text-xs text-danger'}>{errorMessage(run.error)}</p>}
+      {run.error && <p className={'text-xs text-danger'}>{errorMessage(run.error)}</p>}
 
-      {run.data && (
-        <div className={'mt-4'}>
-          <SavedQuestionResult result={run.data} />
-        </div>
-      )}
-    </div>
+      {run.data && <SavedQuestionResult result={run.data} />}
+    </Page>
   );
 }

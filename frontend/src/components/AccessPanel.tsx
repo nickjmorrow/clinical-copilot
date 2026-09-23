@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { errorMessage } from 'src/api/client';
 import Button from 'src/components/Button';
 import LoadFailed from 'src/components/LoadFailed';
+import Loading from 'src/components/Loading';
+import Page from 'src/components/Page';
 import useAccessActions from 'src/hooks/useAccessActions';
 import { LABEL } from 'src/styles';
 
@@ -41,7 +44,7 @@ export default function AccessPanel() {
   const [pending, setPending] = useState<Draft>(null);
   const [saveError, setSaveError] = useState<null | string>(null);
 
-  if (isPending) return null;
+  if (isPending) return <Loading />;
   if (error || !access) {
     return <LoadFailed error={error} onRetry={retry} title={'Could not load your access.'} />;
   }
@@ -69,103 +72,99 @@ export default function AccessPanel() {
     try {
       await setScope(isUnconfined ? null : selected);
       setPending(null);
-    } catch {
-      setSaveError('Could not save your access.');
+    } catch (caught) {
+      setSaveError(`Could not save your access. ${errorMessage(caught)}`);
     }
   };
 
   return (
-    <div className={'h-full overflow-y-auto px-6 py-5'}>
-      <div className={'mx-auto flex max-w-xl flex-col'}>
-        <div>
-          <h2 className={'text-sm font-semibold tracking-tight text-ink'}>Your access</h2>
-          <p className={'mt-1 text-xs text-ink-muted'}>
-            Which patients your questions can see. Confining this to a state changes chat, saved
-            questions and the dashboard alike — they all read the same row.
-          </p>
-        </div>
-
-        <div className={'mt-5'}>
-          <h3 className={LABEL}>Roles</h3>
-          <div className={'mt-2 flex flex-wrap gap-1.5'}>
-            {access.roles.map((role) => (
-              <span
-                className={'rounded-full bg-ink/5 px-2 py-0.5 text-[11px] text-ink-muted'}
-                key={role}
-              >
-                {role}
-              </span>
-            ))}
-            {access.roles.length === 0 && <span className={'text-xs text-ink-muted'}>none</span>}
-          </div>
-        </div>
-
-        <div className={'mt-5 border-t border-ink/5 pt-4'}>
-          <h3 className={LABEL}>Scope</h3>
-
-          <fieldset className={'disabled:opacity-60'} disabled={!canEdit}>
-            <label className={'mt-2 flex items-center gap-2 text-xs text-ink'}>
-              <input
-                checked={isUnconfined}
-                onChange={() => {
-                  setPending('unconfined');
-                }}
-                type={'radio'}
-              />
-              Unconfined — every patient
-            </label>
-
-            {access.availableStates.length === 0 ? (
-              <p className={'mt-2 text-[11px] text-ink-muted'}>
-                The loaded dataset has no state on any patient, so there is nothing to confine to.
-              </p>
-            ) : (
-              <div className={'mt-1 flex flex-col gap-1'}>
-                {access.availableStates.map((state) => (
-                  <label className={'flex items-center gap-2 text-xs text-ink'} key={state}>
-                    <input
-                      checked={selected.includes(state)}
-                      onChange={() => {
-                        toggleState(state);
-                      }}
-                      type={'checkbox'}
-                    />
-                    {state}
-                  </label>
-                ))}
-              </div>
-            )}
-          </fieldset>
-
-          {saveError && <p className={'mt-2 text-xs text-danger'}>{saveError}</p>}
-
-          {!canEdit && (
-            <p className={'mt-3 text-xs text-ink-muted'}>
-              Changing your scope needs the curator role.
-            </p>
-          )}
-
-          {canEdit && (
-            <div className={'mt-3 flex items-center gap-2'}>
-              <Button disabled={!isDirty || isBusy} onClick={() => void save()} variant={'primary'}>
-                {isBusy ? 'Saving…' : 'Save'}
-              </Button>
-              {isDirty && (
-                <button
-                  className={'text-xs text-ink-muted hover:text-ink'}
-                  onClick={() => {
-                    setPending(null);
-                    setSaveError(null);
-                  }}
-                  type={'button'}
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          )}
+    <Page
+      description={
+        'Which patients your questions can see. Confining this to a state changes chat, saved questions and the dashboard alike — they all read the same row.'
+      }
+      title={'Your access'}
+      width={'form'}
+    >
+      <div className={'mt-1'}>
+        <h3 className={LABEL}>Roles</h3>
+        <div className={'mt-2 flex flex-wrap gap-1.5'}>
+          {access.roles.map((role) => (
+            <span
+              className={'rounded-full bg-ink/5 px-2 py-0.5 text-[11px] text-ink-muted'}
+              key={role}
+            >
+              {role}
+            </span>
+          ))}
+          {access.roles.length === 0 && <span className={'text-xs text-ink-muted'}>none</span>}
         </div>
       </div>
-    </div>
+
+      <div className={'mt-5 border-t border-ink/5 pt-4'}>
+        <h3 className={LABEL}>Scope</h3>
+
+        <fieldset className={'disabled:opacity-60'} disabled={!canEdit}>
+          <label className={'mt-2 flex items-center gap-2 text-xs text-ink'}>
+            <input
+              checked={isUnconfined}
+              onChange={() => {
+                setPending('unconfined');
+              }}
+              type={'radio'}
+            />
+            Unconfined — every patient
+          </label>
+
+          {access.availableStates.length === 0 ? (
+            <p className={'mt-2 text-[11px] text-ink-muted'}>
+              The loaded dataset has no state on any patient, so there is nothing to confine to.
+            </p>
+          ) : (
+            <div className={'mt-1 flex flex-col gap-1'}>
+              {access.availableStates.map((state) => (
+                <label className={'flex items-center gap-2 text-xs text-ink'} key={state}>
+                  <input
+                    checked={selected.includes(state)}
+                    onChange={() => {
+                      toggleState(state);
+                    }}
+                    type={'checkbox'}
+                  />
+                  {state}
+                </label>
+              ))}
+            </div>
+          )}
+        </fieldset>
+
+        {saveError && <p className={'mt-2 text-xs text-danger'}>{saveError}</p>}
+
+        {!canEdit && (
+          <p className={'mt-3 text-xs text-ink-muted'}>
+            Changing your scope needs the curator role.
+          </p>
+        )}
+
+        {canEdit && (
+          <div className={'mt-3 flex items-center gap-2'}>
+            <Button disabled={!isDirty || isBusy} onClick={() => void save()} variant={'primary'}>
+              {isBusy ? 'Saving…' : 'Save'}
+            </Button>
+            {isDirty && (
+              <button
+                className={'text-xs text-ink-muted hover:text-ink'}
+                onClick={() => {
+                  setPending(null);
+                  setSaveError(null);
+                }}
+                type={'button'}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </Page>
   );
 }

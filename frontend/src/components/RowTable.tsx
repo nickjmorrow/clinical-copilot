@@ -16,9 +16,9 @@ function cell(value: unknown): string {
 
 /**
  * A cohort or aggregate answer's rows, as a table. Shared by
- * `SavedQuestionResult` and the "view full roster" drilldown on a chat
- * answer's `ToolCard` — the second caller that made this worth pulling out
- * of the first one, rather than a table built twice.
+ * `SavedQuestionResult`, the "Show patients" drilldown under a chat answer
+ * (`AnswerActions`) and the patient browser — rather than a table built three
+ * times.
  */
 export default function RowTable({ columns, rows }: Props) {
   if (rows.length === 0) return null;

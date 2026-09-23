@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { listSavedQuestions, savedQuestionKeys } from 'src/api/savedQuestions';
 import EmptyState from 'src/components/EmptyState';
 import LoadFailed from 'src/components/LoadFailed';
+import Loading from 'src/components/Loading';
 import PickFromList from 'src/components/PickFromList';
 import SavedQuestionDetail from 'src/components/SavedQuestionDetail';
 import SavedQuestionForm from 'src/components/SavedQuestionForm';
@@ -49,7 +50,7 @@ export default function SavedQuestionsPanel() {
     );
   }
 
-  if (questions.isPending) return null;
+  if (questions.isPending) return <Loading />;
   if (questions.error) {
     return (
       <LoadFailed

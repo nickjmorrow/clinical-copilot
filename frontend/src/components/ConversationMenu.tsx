@@ -16,8 +16,8 @@ const ITEM =
 /**
  * The per-conversation menu: rename, pin, archive, delete.
  *
- * Hand-rolled rather than a headless popover library, for the same reason the
- * router is a regex — this is one menu, and the parts a library would give you
+ * Hand-rolled rather than a headless popover library: this is one menu, and
+ * the parts a library would give you
  * that matter (Escape, click-outside, a labelled trigger) are `useDismiss` and
  * three attributes. Reach for shadcn/ui the moment there is a second one; the
  * shape here is what its `DropdownMenu` expects anyway.
@@ -58,10 +58,11 @@ export default function ConversationMenu({
           // Hidden until the row is hovered or something inside has focus, so a
           // list of twenty is twenty titles rather than twenty titles and
           // twenty buttons. `group-focus-within` is what keeps it reachable by
-          // keyboard, where there is no hover to depend on.
+          // keyboard, and `pointer-coarse` on a touch screen — neither has a
+          // hover to depend on.
           isOpen
             ? 'opacity-100'
-            : 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100',
+            : 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100',
         ].join(' ')}
         onClick={() => {
           setIsConfirming(false);

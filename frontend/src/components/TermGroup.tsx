@@ -47,14 +47,12 @@ export default function TermGroup({ label, onPick, terms }: TermGroupProps) {
             </button>
             <p className={'mt-0.5 text-xs text-ink-muted'}>{term.means}</p>
             {term.alsoCalled.length > 0 && (
-              <p className={'mt-1 text-[11px] text-ink-muted/80'}>
+              <p className={'mt-1 text-[11px] text-ink-muted'}>
                 also: {term.alsoCalled.join(', ')}
               </p>
             )}
             <details className={'group mt-1'}>
-              <summary
-                className={'cursor-pointer text-[11px] text-ink-muted/80 hover:text-ink-muted'}
-              >
+              <summary className={'cursor-pointer text-[11px] text-ink-muted hover:text-ink'}>
                 why
               </summary>
               <p className={'mt-1 text-[11px] leading-relaxed text-ink-muted'}>{term.why}</p>

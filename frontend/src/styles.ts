@@ -13,8 +13,11 @@
  * > Layout.
  */
 
+// `disabled:` keeps the text at full strength: a read-only definition is still
+// something to read, and browsers grey disabled controls out by default —
+// Safari through `-webkit-text-fill-color`, which `color` alone does not reach.
 export const INPUT =
-  'w-full rounded-lg border border-ink/10 bg-surface px-2.5 py-1.5 text-xs text-ink outline-none focus:border-accent/50 focus:ring-2 focus:ring-accent/15';
+  'w-full rounded-lg border border-ink/10 bg-surface px-2.5 py-1.5 text-xs text-ink outline-none focus:border-accent/50 focus:ring-2 focus:ring-accent/15 disabled:cursor-default disabled:border-ink/5 disabled:opacity-100 disabled:[-webkit-text-fill-color:currentColor]';
 
 export const LABEL = 'text-[11px] font-semibold tracking-wide text-ink-muted uppercase';
 

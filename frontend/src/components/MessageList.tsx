@@ -26,6 +26,10 @@ const DOT_DELAYS = [
 interface Props {
   error: null | string;
   events: ConversationEvent[];
+  /** The transcript is on its way. Not the same as empty: an existing
+   *  conversation shown as the welcome screen, even for a moment, offers
+   *  starter questions that would be sent into it. */
+  isLoading: boolean;
   isStreaming: boolean;
   /** Tokens arriving right now, not yet replaced by a durable event. */
   liveText: string;
@@ -58,6 +62,7 @@ interface Props {
 export default function MessageList({
   error,
   events,
+  isLoading,
   isStreaming,
   liveText,
   onAsk,
@@ -89,7 +94,7 @@ export default function MessageList({
         ref={containerRef}
       >
         <Column className={'flex min-h-full flex-col gap-6 py-6'}>
-          {items.length === 0 && !isStreaming && (
+          {items.length === 0 && !isStreaming && !isLoading && (
             <div className={'m-auto max-w-md text-center sm:px-4'}>
               <p className={'text-sm font-medium text-ink'}>
                 Ask a clinical question about this hospital&rsquo;s patients.
@@ -108,9 +113,13 @@ export default function MessageList({
           )}
 
           <div aria-live={'polite'} className={'flex flex-col gap-6'}>
-            {items.map((item) => (
-              <TurnItemView item={item} key={item.key} />
-            ))}
+            {items.map((item, index) => {
+              // An answer ends where the next message begins — or at the end
+              // of the transcript, once nothing more is coming.
+              const next = items[index + 1];
+              const isAnswerEnd = next === undefined ? !isStreaming : next.kind === 'user';
+              return <TurnItemView isAnswerEnd={isAnswerEnd} item={item} key={item.key} />;
+            })}
           </div>
 
           {isStreaming && thinkingText && (

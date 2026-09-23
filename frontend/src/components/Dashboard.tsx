@@ -3,6 +3,8 @@ import { listSavedQuestions, savedQuestionKeys } from 'src/api/savedQuestions';
 import DashboardCard from 'src/components/DashboardCard';
 import EmptyState from 'src/components/EmptyState';
 import LoadFailed from 'src/components/LoadFailed';
+import Loading from 'src/components/Loading';
+import Page from 'src/components/Page';
 
 /**
  * Every saved question, run and shown together — SEMANTIC_LAYER.md § 17: "a
@@ -25,7 +27,9 @@ export default function Dashboard() {
     );
   }
 
-  if (questions.data?.length === 0) {
+  if (questions.isPending) return <Loading />;
+
+  if (questions.data.length === 0) {
     return (
       <EmptyState
         detail={
@@ -37,18 +41,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className={'h-full overflow-y-auto px-6 py-5'}>
-      <div className={'mx-auto flex max-w-4xl flex-col gap-4'}>
-        <div>
-          <h2 className={'text-sm font-semibold tracking-tight text-ink'}>Dashboard</h2>
-          <p className={'mt-1 text-xs text-ink-muted'}>
-            Every saved question, run fresh each time this page opens.
-          </p>
-        </div>
-        {questions.data?.map((question) => (
-          <DashboardCard key={question.id} question={question} />
-        ))}
-      </div>
-    </div>
+    <Page
+      description={'Every saved question, run fresh each time this page opens.'}
+      title={'Dashboard'}
+      width={'table'}
+    >
+      {questions.data.map((question) => (
+        <DashboardCard key={question.id} question={question} />
+      ))}
+    </Page>
   );
 }

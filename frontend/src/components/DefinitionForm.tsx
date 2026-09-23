@@ -10,9 +10,11 @@ import {
 } from 'src/api/definitions';
 import Button from 'src/components/Button';
 import DimensionEditor from 'src/components/DimensionEditor';
+import InlineError from 'src/components/InlineError';
 import MeasureEditor from 'src/components/MeasureEditor';
+import Page from 'src/components/Page';
 import PredicateEditor from 'src/components/PredicateEditor';
-import { formatTime } from 'src/format';
+import { formatDateTime } from 'src/format';
 import useDefinitionActions from 'src/hooks/useDefinitionActions';
 import {
   type Dimension,
@@ -30,6 +32,9 @@ import { INPUT, LABEL } from 'src/styles';
 interface Props {
   definition: Definition | null;
   filterTerms: string[];
+  /** Show the definition without any way to change it — for anyone who is
+   *  not a curator. The server refuses their writes either way. */
+  isReadOnly: boolean;
   onDeleted: () => void;
   onSaved: (id: string) => void;
 }
@@ -68,11 +73,24 @@ function emptyLogicFor(kind: Definition['kind']): LogicValue {
  * component parses JSON text; a malformed row still cannot crash the editor,
  * because those parsers fall back to a fresh default instead of throwing.
  *
- * Keyed by `definition?.id` in the parent, so switching which definition is
+ * Keyed by the selection in the parent, so switching which definition is
  * selected remounts this component instead of syncing props into state with
  * an effect — see CONVENTIONS.md > Frontend > "Reset state with a key."
+ *
+ * **Read-only is the same form, disabled.** One `<fieldset disabled>` reaches
+ * every control, including the ones deep inside the logic editors, so a
+ * visitor reads a definition in exactly the shape a curator edits it — the
+ * logic as structure, not a second, summarised rendering of it that could
+ * drift from the first. Everything that writes, or previews against patient
+ * data, is left out rather than disabled.
  */
-export default function DefinitionForm({ definition, filterTerms, onDeleted, onSaved }: Props) {
+export default function DefinitionForm({
+  definition,
+  filterTerms,
+  isReadOnly,
+  onDeleted,
+  onSaved,
+}: Props) {
   const actions = useDefinitionActions();
   const isNew = definition === null;
 
@@ -206,17 +224,23 @@ export default function DefinitionForm({ definition, filterTerms, onDeleted, onS
   };
 
   return (
-    <div className={'flex h-full flex-col overflow-y-auto px-6 py-5'}>
-      <h2 className={'text-sm font-semibold tracking-tight text-ink'}>
-        {isNew ? 'New definition' : definition.term}
-      </h2>
-      {!isNew && (
-        <p className={'mt-0.5 text-[11px] text-ink-muted'}>
-          version {definition.version} · last updated by {definition.updatedBy ?? 'unknown'}
+    <Page
+      description={
+        isNew
+          ? undefined
+          : `version ${String(definition.version)} · ${definition.status} · last updated by ${definition.updatedBy ?? 'unknown'}`
+      }
+      title={isNew ? 'New definition' : definition.term}
+      width={'form'}
+    >
+      {isReadOnly && (
+        <p className={'rounded-lg bg-ink/5 px-3 py-2 text-xs text-ink-muted'}>
+          Read-only. This is exactly what the app applies when a question uses this term; changing
+          it needs the curator role.
         </p>
       )}
 
-      <div className={'mt-4 flex flex-col gap-3'}>
+      <fieldset className={'flex min-w-0 flex-col gap-3'} disabled={isReadOnly}>
         <label className={'flex flex-col gap-1'}>
           <span className={LABEL}>Term</span>
           {isNew ? (
@@ -357,63 +381,78 @@ export default function DefinitionForm({ definition, filterTerms, onDeleted, onS
           )}
         </div>
 
-        <div className={'flex items-center gap-2'}>
-          <Button disabled={isPreviewing} onClick={() => void runPreview()}>
-            {isPreviewing ? 'Checking…' : 'Preview'}
-          </Button>
-          {preview?.kind === 'count' && (
-            <p className={'text-xs text-ink-muted'}>
-              {preview.value === null
-                ? 'Shape is valid. No cohort to preview for this kind.'
-                : `${String(preview.value)} patient(s) would match.`}
-            </p>
-          )}
-          {preview?.kind === 'error' && <p className={'text-xs text-danger'}>{preview.message}</p>}
-        </div>
+        {!isReadOnly && (
+          <>
+            <div className={'flex items-center gap-2'}>
+              <Button disabled={isPreviewing} onClick={() => void runPreview()}>
+                {isPreviewing ? 'Checking…' : 'Preview'}
+              </Button>
+              {preview?.kind === 'count' && (
+                <p className={'text-xs text-ink-muted'}>
+                  {preview.value === null
+                    ? 'Shape is valid. No cohort to preview for this kind.'
+                    : `${preview.value.toLocaleString()} ${preview.value === 1 ? 'patient' : 'patients'} would match.`}
+                </p>
+              )}
+              {preview?.kind === 'error' && (
+                <p className={'text-xs text-danger'}>{preview.message}</p>
+              )}
+            </div>
 
-        <label className={'flex flex-col gap-1'}>
-          <span className={LABEL}>Why this change</span>
-          <input
-            className={INPUT}
-            onChange={(event) => {
-              setChangeReason(event.target.value);
-            }}
-            placeholder={'e.g. tightened after clinical review'}
-            value={changeReason}
-          />
-        </label>
+            <label className={'flex flex-col gap-1'}>
+              <span className={LABEL}>Why this change</span>
+              <input
+                className={INPUT}
+                onChange={(event) => {
+                  setChangeReason(event.target.value);
+                }}
+                placeholder={'e.g. tightened after clinical review'}
+                value={changeReason}
+              />
+            </label>
 
-        {formError && <p className={'text-xs text-danger'}>{formError}</p>}
+            {formError && <p className={'text-xs text-danger'}>{formError}</p>}
 
-        <div className={'flex flex-wrap items-center gap-2 pt-1'}>
-          <Button disabled={actions.isBusy} onClick={() => void save()} variant={'primary'}>
-            {isNew ? 'Create draft' : 'Save'}
-          </Button>
-          {!isNew && definition.status === 'draft' && (
-            <Button disabled={actions.isBusy} onClick={() => void publish()}>
-              Publish
-            </Button>
-          )}
-          {!isNew && (
-            <Button
-              danger={isConfirmingDelete}
-              disabled={actions.isBusy}
-              onClick={() => void remove()}
-            >
-              {isConfirmingDelete ? 'Really delete?' : 'Delete'}
-            </Button>
-          )}
-        </div>
-      </div>
+            <div className={'flex flex-wrap items-center gap-2 pt-1'}>
+              <Button disabled={actions.isBusy} onClick={() => void save()} variant={'primary'}>
+                {isNew ? 'Create draft' : 'Save'}
+              </Button>
+              {!isNew && definition.status === 'draft' && (
+                <Button disabled={actions.isBusy} onClick={() => void publish()}>
+                  Publish
+                </Button>
+              )}
+              {!isNew && (
+                <Button
+                  danger={isConfirmingDelete}
+                  disabled={actions.isBusy}
+                  onClick={() => void remove()}
+                >
+                  {isConfirmingDelete ? 'Really delete?' : 'Delete'}
+                </Button>
+              )}
+            </div>
+          </>
+        )}
+      </fieldset>
 
       {!isNew && (
-        <div className={'mt-6 border-t border-ink/5 pt-4'}>
+        <div className={'mt-2 border-t border-ink/5 pt-4'}>
           <h3 className={LABEL}>History</h3>
+          {history.isPending && <p className={'mt-2 text-[11px] text-ink-muted'}>Loading…</p>}
+          {history.error && (
+            <div className={'mt-2'}>
+              <InlineError
+                message={`Could not load the history. ${errorMessage(history.error)}`}
+                onRetry={() => void history.refetch()}
+              />
+            </div>
+          )}
           <ul className={'mt-2 flex flex-col gap-2'}>
             {history.data?.map((entry) => (
               <li className={'text-[11px] text-ink-muted'} key={entry.id}>
                 <span className={'font-medium text-ink'}>v{entry.version}</span> {entry.action} by{' '}
-                {entry.changedBy} at {formatTime(entry.createdAt)} — {entry.changeReason}
+                {entry.changedBy}, {formatDateTime(entry.createdAt)} — {entry.changeReason}
               </li>
             ))}
             {history.data?.length === 0 && (
@@ -422,6 +461,6 @@ export default function DefinitionForm({ definition, filterTerms, onDeleted, onS
           </ul>
         </div>
       )}
-    </div>
+    </Page>
   );
 }

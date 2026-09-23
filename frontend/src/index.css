@@ -6,22 +6,44 @@
   --color-surface: oklch(0.99 0 0);
   --color-surface-raised: oklch(0.97 0.002 260);
   --color-ink: oklch(0.22 0.01 260);
-  --color-ink-muted: oklch(0.55 0.015 260);
+  /* 0.50, not lighter: muted text sits on `surface-raised` as often as on
+     `surface`, and has to clear WCAG AA (4.5:1) on both. */
+  --color-ink-muted: oklch(0.5 0.015 260);
   --color-accent: oklch(0.55 0.15 260);
   /* What is legible ON the accent, which is not `surface` and is not white in
      every theme. Named for its job so a component never has to know which. */
   --color-on-accent: oklch(0.99 0 0);
   --color-danger: oklch(0.52 0.2 25);
+
+  /* `Loading`: invisible for 300ms, then a quick fade — a fast load shows
+     nothing rather than flashing a word. */
+  --animate-appear: appear 0.2s ease-out 0.3s both;
+  @keyframes appear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }
 
 /* One dark block, keyed off an attribute rather than `prefers-color-scheme`.
    `useTheme` resolves the three-way preference — light, dark, follow the OS —
    and writes the *answer* to `<html data-theme>`, so this file never has to
    express "dark unless the user explicitly chose light", which a media query
-   alone cannot say. The inline script in index.html writes the same attribute
-   before React exists, which is what stops a light flash on load; keep the two
-   in step. */
+   alone cannot say. `public/theme.js` writes the same attribute before React
+   exists, which is what stops a light flash on load; keep the two in step.
+
+   `color-scheme` is what the browser's own controls read — scrollbars,
+   checkboxes, selects and their popups. Without it they stay light in the
+   dark theme. */
+:root {
+  color-scheme: light;
+}
+
 :root[data-theme='dark'] {
+  color-scheme: dark;
   --color-surface: oklch(0.19 0.008 260);
   --color-surface-raised: oklch(0.24 0.01 260);
   --color-ink: oklch(0.95 0.005 260);

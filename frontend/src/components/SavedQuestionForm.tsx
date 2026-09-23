@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { errorMessage } from 'src/api/client';
 import { fetchClinicalContext } from 'src/api/clinical';
 import Button from 'src/components/Button';
+import Page from 'src/components/Page';
 import TermCheckboxGroup from 'src/components/TermCheckboxGroup';
 import useSavedQuestionActions from 'src/hooks/useSavedQuestionActions';
 import { INPUT, LABEL } from 'src/styles';
@@ -66,9 +67,7 @@ export default function SavedQuestionForm({ onCreated }: Props) {
   };
 
   return (
-    <div className={'flex h-full flex-col gap-3 overflow-y-auto px-6 py-5'}>
-      <h2 className={'text-sm font-semibold tracking-tight text-ink'}>New saved question</h2>
-
+    <Page title={'New saved question'} width={'form'}>
       <label className={'flex flex-col gap-1'}>
         <span className={LABEL}>Name</span>
         <input
@@ -120,6 +119,6 @@ export default function SavedQuestionForm({ onCreated }: Props) {
       >
         Save question
       </Button>
-    </div>
+    </Page>
   );
 }

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { accessKeys, fetchMyAccess } from 'src/api/access';
-import { conversationKeys, listConversations } from 'src/api/conversations';
+import { conversationKeys, getConversation, listConversations } from 'src/api/conversations';
 import Button from 'src/components/Button';
 import Chat from 'src/components/Chat';
 import ClinicalContextPanel from 'src/components/ClinicalContextPanel';
@@ -73,7 +73,19 @@ export default function ChatPage() {
   });
   const access = useQuery({ queryFn: fetchMyAccess, queryKey: accessKeys.me });
 
-  const active = conversations?.find((one) => one.id === conversationId);
+  // The open conversation's own record, not a lookup in the list: the list
+  // is the active one only, so an archived conversation was titled "New
+  // conversation". Same key as `Chat`'s transcript, so this is that fetch,
+  // not a second one.
+  const { data: open } = useQuery({
+    enabled: conversationId !== null,
+    queryFn: () => (conversationId === null ? null : getConversation(conversationId)),
+    queryKey: conversationKeys.detail(conversationId ?? 'draft'),
+  });
+  const title =
+    conversationId === null
+      ? 'New conversation'
+      : (open?.title ?? conversations?.find((one) => one.id === conversationId)?.title ?? '');
   const scope = access.data ? scopeLabel(access.data.scopeStates) : null;
 
   // Escape closes the panel. Synchronising with the document is what an
@@ -105,7 +117,7 @@ export default function ChatPage() {
                 'min-w-0 flex-1 truncate text-sm font-medium tracking-tight text-ink-muted'
               }
             >
-              {active?.title ?? 'New conversation'}
+              {title}
             </h2>
             {scope && access.data && (
               <Link

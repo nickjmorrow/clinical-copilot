@@ -1,14 +1,19 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
-import AccessPanel from 'src/components/AccessPanel';
 import ChatPage from 'src/components/ChatPage';
 import Dashboard from 'src/components/Dashboard';
-import DefinitionsEditor from 'src/components/DefinitionsEditor';
-import PatientBrowser from 'src/components/PatientBrowser';
+import Loading from 'src/components/Loading';
 import SavedQuestionsPanel from 'src/components/SavedQuestionsPanel';
 import Sidebar from 'src/components/Sidebar';
-import UnresolvedTermsPanel from 'src/components/UnresolvedTermsPanel';
 import { paths, PATTERNS } from 'src/paths';
+
+// The curator side, loaded when first opened. Most people who open the app
+// only ask questions, and the definitions editor — a recursive predicate
+// builder and three logic editors — is the largest part of it.
+const AccessPanel = lazy(() => import('src/components/AccessPanel'));
+const DefinitionsEditor = lazy(() => import('src/components/DefinitionsEditor'));
+const PatientBrowser = lazy(() => import('src/components/PatientBrowser'));
+const UnresolvedTermsPanel = lazy(() => import('src/components/UnresolvedTermsPanel'));
 
 /**
  * The sidebar, and the page the address names.
@@ -90,25 +95,27 @@ export default function App() {
             itself, and without it the bar above would push it off the end
             of the screen instead of shrinking it. */}
         <div className={'flex min-h-0 flex-1 flex-col'}>
-          <Routes>
-            {/* One layout route for both chat addresses, so `ChatPage` stays
+          <Suspense fallback={<Loading />}>
+            <Routes>
+              {/* One layout route for both chat addresses, so `ChatPage` stays
               mounted when the draft at `/` becomes `/c/<id>` — the side panel
               you had open does not close on your first message. The two
               children only match; `ChatPage` reads the id with `useParams`
               and renders the transcript itself. */}
-            <Route element={<ChatPage />}>
-              <Route index />
-              <Route path={PATTERNS.conversation} />
-            </Route>
-            <Route element={<SavedQuestionsPanel />} path={PATTERNS.saved} />
-            <Route element={<Dashboard />} path={PATTERNS.dashboard} />
-            <Route element={<DefinitionsEditor />} path={PATTERNS.definitions} />
-            <Route element={<UnresolvedTermsPanel />} path={PATTERNS.unresolved} />
-            <Route element={<PatientBrowser />} path={PATTERNS.patients} />
-            <Route element={<AccessPanel />} path={PATTERNS.access} />
-            {/* A mistyped address lands somewhere you can do something. */}
-            <Route element={<Navigate replace to={paths.draft} />} path={'*'} />
-          </Routes>
+              <Route element={<ChatPage />}>
+                <Route index />
+                <Route path={PATTERNS.conversation} />
+              </Route>
+              <Route element={<SavedQuestionsPanel />} path={PATTERNS.saved} />
+              <Route element={<Dashboard />} path={PATTERNS.dashboard} />
+              <Route element={<DefinitionsEditor />} path={PATTERNS.definitions} />
+              <Route element={<UnresolvedTermsPanel />} path={PATTERNS.unresolved} />
+              <Route element={<PatientBrowser />} path={PATTERNS.patients} />
+              <Route element={<AccessPanel />} path={PATTERNS.access} />
+              {/* A mistyped address lands somewhere you can do something. */}
+              <Route element={<Navigate replace to={paths.draft} />} path={'*'} />
+            </Routes>
+          </Suspense>
         </div>
       </main>
     </div>

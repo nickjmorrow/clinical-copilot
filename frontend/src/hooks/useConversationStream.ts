@@ -29,6 +29,9 @@ interface StartedTurn {
 export interface ConversationStream {
   error: null | string;
   events: ConversationEvent[];
+  /** An existing conversation whose transcript has not arrived yet — which
+   *  must not render as the empty draft it would otherwise look like. */
+  isLoading: boolean;
   isStreaming: boolean;
   liveText: string;
   /**
@@ -68,11 +71,11 @@ export interface ConversationStream {
  * reattaching and supersession lives here, where it can be read in one piece.
  *
  * **A null `conversationId` is a draft**, and sending is what creates it. That
- * belongs here rather than in `App` because it is the same sentence as sending:
+ * belongs here rather than in `ChatPage` because it is the same sentence as sending:
  * the id is a detail of how the message gets written down, not a thing the
  * layout above has to sequence. See CONVENTIONS.md > Starting one.
  *
- * **Assumes it is remounted when `conversationId` changes.** `App` passes
+ * **Assumes it is remounted when `conversationId` changes.** `ChatPage` passes
  * `key={id ?? 'new'}` to `Chat` for exactly that reason, which is React's own
  * answer to "reset all state when a prop changes" and is why there is no effect
  * here clearing six things by hand.
@@ -311,7 +314,7 @@ export default function useConversationStream(
         return;
       }
 
-      // A draft just became real, which means `App` is about to re-key `Chat`
+      // A draft just became real, which means `ChatPage` is about to re-key `Chat`
       // and this instance is about to be unmounted. So the handover is written
       // into the cache the remounted one will read, rather than into state that
       // is about to be thrown away.
@@ -361,6 +364,7 @@ export default function useConversationStream(
   return {
     error,
     events,
+    isLoading: conversationId !== null && conversation === undefined && loadError === null,
     isStreaming: resumeFrom !== null || sendMutation.isPending,
     liveText,
     loadError: conversation ? null : loadError,

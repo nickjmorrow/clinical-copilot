@@ -36,8 +36,9 @@ const relative = (file: string) => file.slice(SRC.length);
 
 // --------------------------------------------------------- semantic colours
 //
-// CONVENTIONS.md > Frontend: "Every colour is a semantic token, never a literal.
-// `bg-surface`, not `bg-slate-50`; `text-danger`, not `text-red-700`." That is
+// Every colour is a semantic token, never a literal: `bg-surface`, not
+// `bg-slate-50`; `text-danger`, not `text-red-700` (CONVENTIONS.md > Structural
+// tests, "No literal Tailwind colour anywhere in `src/`"). That is
 // what makes a theme a block of variable values rather than a `dark:` class on
 // every element. The trap is opacity: `border-black/10` is a hairline on one
 // background and invisible on the other, which is why a fraction is written
