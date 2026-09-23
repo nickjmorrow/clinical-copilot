@@ -378,9 +378,11 @@ unreachable from the browser, deliberately — see
 
 ### 18. Export, and treating it as a governed act
 
-**Shipped.** `GET /clinical/definitions/export` — the whole model as JSON,
-every status, in one response — shipped alongside the editor (§6) as an API
-for a curator to call, with no button of its own: the backup-and-diff story for choosing database rows over git-tracked files. The
+**Shipped.** The whole model as JSON, every status, is
+`GET /clinical/definitions` — the list the editor (§6) reads — and that is the
+backup-and-diff story for choosing database rows over git-tracked files. A
+separate `/definitions/export` endpoint once returned exactly the same thing
+and was removed as a duplicate nothing called. The
 other kind of export this entry meant, a CSV of a *cohort's* rows, is now
 `POST /api/clinical/export` (`app/api/routes/cohort.py`), reached from
 the "Download CSV" button under a chat answer, next to the drilldown (§3), for

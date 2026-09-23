@@ -6,10 +6,6 @@ docstring and SEMANTIC_LAYER.md § 2. Everything here shows `logic`, because
 the audience is a curator reviewing or changing what a term means, and an
 auditor reviewing what is live; `api/deps.RequireReviewer` gates reads to
 those two roles, `RequireCurator` gates every write to one.
-
-Route order matters: `/definitions/export` and `/definitions/preview` are
-declared before `/definitions/{definition_id}`, or FastAPI would try to parse
-`"export"` and `"preview"` as a UUID path parameter.
 """
 
 import uuid
@@ -55,22 +51,6 @@ async def _get_or_404(session: DbSession, definition_id: uuid.UUID) -> ClinicalD
 async def list_definitions(
     session: DbSession, _user_id: RequireReviewer
 ) -> ApiResponse[list[DefinitionOut]]:
-    rows = await definition_service.list_definitions(session, include_unpublished=True)
-    return ApiResponse(data=[to_definition_out(row) for row in rows])
-
-
-@router.get("/definitions/export")
-async def export_definitions(
-    session: DbSession, _user_id: RequireReviewer
-) -> ApiResponse[list[DefinitionOut]]:
-    """The whole model as JSON — every status, in one response.
-
-    The backup and diff story this project gets for choosing database rows
-    over git-tracked files: not version control, but a snapshot a curator can
-    pull down before a risky edit, or archive on a schedule outside this app.
-    Definitions live in the database rather than in git-tracked files so a
-    curator can edit, version and publish one without a code deploy.
-    """
     rows = await definition_service.list_definitions(session, include_unpublished=True)
     return ApiResponse(data=[to_definition_out(row) for row in rows])
 
@@ -140,14 +120,6 @@ async def create_definition(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
     except definition_service.DefinitionConflictError as conflict:
         raise HTTPException(status.HTTP_409_CONFLICT, str(conflict)) from conflict
-    return ApiResponse(data=to_definition_out(row))
-
-
-@router.get("/definitions/{definition_id}")
-async def get_definition(
-    definition_id: uuid.UUID, session: DbSession, _user_id: RequireReviewer
-) -> ApiResponse[DefinitionOut]:
-    row = await _get_or_404(session, definition_id)
     return ApiResponse(data=to_definition_out(row))
 
 
