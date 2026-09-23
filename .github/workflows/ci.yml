@@ -53,7 +53,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v10
+      # A full version, not `@v10`: setup-uv stopped publishing floating major
+      # tags, so the short form fails with "unable to find version".
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
