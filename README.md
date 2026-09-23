@@ -9,6 +9,11 @@ English — and does **not** let the model write the SQL.
 try *"Which patients are on a nephrotoxic medication and have impaired kidney
 function?"* All data is synthetic, and usage is rate-limited per visitor.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/aggregate-dark.png">
+  <img alt="An aggregate question answered with a bar chart and a table: average eGFR among patients with impaired renal function, by age band, with the defined terms it used named above the chart" src="docs/screenshots/aggregate-light.png">
+</picture>
+
 The model's job is to decide which of the hospital's *defined clinical terms* a
 question refers to: a filter to narrow a cohort, a measure to aggregate over
 it, a dimension to group it by. What "impaired renal function" means is a row
@@ -70,6 +75,20 @@ brought — and the ones this project added — live in [CONVENTIONS.md](./CONVE
   and its own conversations, bounded by per-visitor and daily cost limits.
   *Trade-off:* nothing follows you between devices, and the limits are checked
   between turns rather than mid-answer.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="68%"><img alt="The headline question answered: 76 matching patients, the defined term it resolved to, and what that term is made of" src="docs/screenshots/cohort.png"></td>
+    <td width="32%"><img alt="The same app on a phone, with the sidebar folded into a menu" src="docs/screenshots/phone.png"></td>
+  </tr>
+  <tr>
+    <td>A cohort question. The model picked one defined term; the answer names
+    it and what it is made of, and the SQL behind it is one click away.</td>
+    <td>On a phone, the sidebar becomes a menu.</td>
+  </tr>
+</table>
 
 ## Quick start
 
@@ -402,3 +421,8 @@ Authentication is **not** on that list any more: `OIDC_ISSUER` unset runs the
 app with no accounts at all, and setting it turns on real JWKS verification
 against any OIDC provider. See [CONVENTIONS.md §
 Authentication](./CONVENTIONS.md#authentication).
+
+## Author
+
+Built by Nicholas Morrow — [nickjmorrow.com](https://nickjmorrow.com) ·
+[GitHub](https://github.com/nickjmorrow). MIT licensed; see [LICENSE](./LICENSE).
