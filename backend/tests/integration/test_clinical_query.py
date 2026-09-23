@@ -330,6 +330,10 @@ async def test_the_tool_answers_and_shows_its_working(seeded):
     assert "impaired renal function" in output.content
     assert "KDIGO" in output.content
     assert "SQL executed:" in output.content
+    # Completeness is stated, not left to be inferred from the SQL's LIMIT —
+    # which is one past the page size and was once reported as "the cap".
+    assert "This is the complete result" in output.content
+    assert "capped page" not in output.content
     # SEMANTIC_LAYER.md § 1: the answer cites which dataset it ran against,
     # not just the SQL — the model can relay this if asked "where's this from".
     assert "Dataset: " in output.content

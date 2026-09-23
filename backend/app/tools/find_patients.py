@@ -164,10 +164,19 @@ def _render_answer(answer: ClinicalAnswer) -> str:
         lines.append(f"{answer.row_count} group(s).")
     else:
         lines.append(f"{answer.row_count} matching patient(s).")
+    # Said either way, not only when it is capped. Left unsaid, the model went
+    # looking for a cap and found the LIMIT in the SQL below — which is one row
+    # past the page size, fetched only to learn whether more exist — and told
+    # the user "not capped; the cap is 201".
     if answer.truncated:
         lines.append(
             "This is a capped page, not the whole result — more patients match. "
             "Tell the user the list is truncated rather than implying it is complete."
+        )
+    else:
+        lines.append(
+            "This is the complete result; nothing was left out. There is no cap to mention — "
+            "the LIMIT in the SQL only checks whether more rows exist."
         )
     lines.extend(
         f"{u.count} patient(s) could not be evaluated for {u.term!r} — no measurement on "
