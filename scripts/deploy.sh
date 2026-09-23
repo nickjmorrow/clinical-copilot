@@ -56,10 +56,10 @@ say "Server: $target  ·  App: $app  ·  Site: https://$domain"
 say "Provisioning"
 remote 'bash -s' <<'PROVISION'
 set -euo pipefail
-if ! command -v docker >/dev/null || ! command -v caddy >/dev/null; then
+if ! command -v docker >/dev/null; then
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -q
-  apt-get install -yq docker.io docker-compose-v2 docker-buildx caddy rsync ufw
+  apt-get install -yq docker.io docker-compose-v2 docker-buildx rsync ufw
   systemctl enable --now docker
   # The image builds and the first seed are the memory peaks. Without swap, a
   # small machine OOM-kills a build instead of letting it run slowly.
@@ -76,6 +76,24 @@ if ! command -v docker >/dev/null || ! command -v caddy >/dev/null; then
   ufw --force enable
 else
   echo "already provisioned"
+fi
+
+# Caddy from its own repository, not Ubuntu's. The Ubuntu package is an old
+# release rebuilt with a much newer Go, and it panics and exits on every live
+# reload — every site on the server down until someone starts it again. This
+# also upgrades a server that was provisioned before this block existed.
+# --force-confold keeps the Caddyfile below rather than the package's default.
+if [[ ! -f /etc/apt/sources.list.d/caddy-stable.list ]]; then
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get install -yq debian-keyring debian-archive-keyring apt-transport-https curl gpg
+  curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/gpg.key |
+    gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt \
+    > /etc/apt/sources.list.d/caddy-stable.list
+  chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
+    /etc/apt/sources.list.d/caddy-stable.list
+  apt-get update -q
+  apt-get install -yq -o Dpkg::Options::=--force-confold caddy
 fi
 
 # One Caddy for every project on the server: the main Caddyfile only imports a
@@ -157,11 +175,11 @@ say "HTTPS"
 # through as they are written. HSTS lives here because Caddy is the only thing
 # that knows the site is HTTPS.
 #
-# Restart, not reload. The Caddy that Ubuntu packages (2.6, built with a much
-# newer Go) panics on every live reload — sometimes after reporting success —
-# and exits, taking every site on the server down until someone starts it
-# again. A restart is a second or two of refused connections for each site.
-remote "cat > /etc/caddy/sites/$app.caddy && caddy validate --config /etc/caddy/Caddyfile >/dev/null && systemctl restart caddy" <<SITE
+# A live reload, which drops no connections for this site or any other. If it
+# fails — or Caddy is not running a moment later, which is how the Ubuntu
+# package's crash-on-reload looked, since it reported success first — fall
+# back to a restart rather than leave every site on the server down.
+remote "cat > /etc/caddy/sites/$app.caddy && caddy validate --config /etc/caddy/Caddyfile >/dev/null && { systemctl reload caddy || systemctl restart caddy; } && sleep 2 && { systemctl is-active --quiet caddy || systemctl restart caddy; }" <<SITE
 $domain {
 	reverse_proxy 127.0.0.1:$port {
 		flush_interval -1
