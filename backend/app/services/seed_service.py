@@ -40,7 +40,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import DEV_USER_ID
 from app.logging import get_logger
 from app.models import (
-    ClinicalDefinition,
     DatasetMeta,
     Medication,
     MedicationAnnotation,
@@ -485,8 +484,3 @@ async def _insert_definitions(session: AsyncSession) -> int:
 def _chunks[T](items: list[T]) -> Iterable[list[T]]:
     for start in range(0, len(items), CHUNK):
         yield items[start : start + CHUNK]
-
-
-# Exported for the tests, which assert the seed wrote what the reference says.
-DEFINITION_COUNT = len(reference_data.CLINICAL_DEFINITIONS)
-_ = ClinicalDefinition  # the model is written through definition_service; named for the reader

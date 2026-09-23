@@ -445,25 +445,6 @@ def parse_dimension(logic: object) -> Dimension:
     raise InvalidPredicateError(message)
 
 
-def references(predicate: Predicate) -> tuple[str, ...]:
-    """Every term a predicate names, in order of appearance.
-
-    Used by the vocabulary loader to resolve references and to refuse a cycle;
-    used by the audit to record which versions an answer leaned on.
-    """
-    match predicate:
-        case TermReference():
-            return (predicate.term,)
-        case AnyOf() | AllOf():
-            return tuple(term for member in predicate.of for term in references(member))
-        case Not():
-            return references(predicate.of)
-        case Resolved():
-            return (predicate.term, *references(predicate.predicate))
-        case _:
-            return ()
-
-
 def substitute(predicate: Predicate, lookup: Callable[[str], Predicate]) -> Predicate:
     """Replace every `TermReference` with what `lookup` returns for it.
 

@@ -2,7 +2,7 @@
 
 The same contract as `conversation_service`: routes validate, authorize and
 shape a response; everything a second caller would need lives here. The second
-caller is not hypothetical — `worker.py` already reads `schedules` to expand due
+caller is not hypothetical — the worker already reads `schedules` to expand due
 rows, and a schedules UI or a `seed` command would be the third and fourth.
 
 Every function takes an explicit `session`.

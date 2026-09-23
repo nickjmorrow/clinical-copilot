@@ -85,10 +85,6 @@ _COMPARE: Final[dict[str, Callable[[Any, Any], ColumnElement[bool]]]] = {
     "=": operator.eq,
 }
 
-# A named predicate, for the explain path: which leg admitted or excluded a
-# patient is only answerable if each leg carries the term it came from.
-NamedPredicate = tuple[str, Predicate]
-
 
 def patient_condition(
     predicates: Sequence[Predicate],
@@ -400,76 +396,6 @@ def unmeasured_condition(threshold: ObservationThreshold) -> ColumnElement[bool]
             )
             .correlate(Patient)
         )
-    )
-
-
-def leg_report_query(
-    named: Sequence[NamedPredicate], *, source_id: str, today: date
-) -> Select[Any]:
-    """For one patient, whether each named predicate admits them.
-
-    One row, one boolean column per term. The explain path — "why is this
-    patient not in the cohort" — is this query plus the evidence queries below.
-    Scope is deliberately not applied: a curator asking why a patient is
-    absent should be told "out of your scope" by the caller, not shown a row
-    that does not exist.
-    """
-    columns = [
-        case((condition_for(predicate, today=today), True), else_=False).label(term)
-        for term, predicate in named
-    ]
-    return select(Patient.source_id, *columns).where(Patient.source_id == source_id)
-
-
-def latest_observation_query(threshold: ObservationThreshold, *, source_id: str) -> Select[Any]:
-    """The value a threshold actually compared for one patient, and when.
-
-    Evidence for a cohort row: the number behind "impaired renal function"
-    rather than the word. Reads the observation, never a patient column.
-    """
-    return (
-        select(
-            Observation.code,
-            Observation.display,
-            Observation.value_numeric,
-            Observation.unit,
-            Observation.taken_at,
-        )
-        .join(Patient, Patient.id == Observation.patient_id)
-        .where(
-            Patient.source_id == source_id,
-            Observation.code.in_(threshold.codes),
-            Observation.unit.in_(threshold.units),
-            Observation.value_numeric.is_not(None),
-        )
-        .order_by(Observation.taken_at.desc())
-        .limit(1)
-    )
-
-
-def matching_prescriptions_query(
-    predicate: MedicationAttribute, *, source_id: str, today: date
-) -> Select[Any]:
-    """The prescriptions that put one patient inside a medication predicate."""
-    return (
-        _join_medication_annotations(
-            select(
-                Medication.display,
-                Medication.code,
-                MedicationAnnotation.value,
-                Prescription.start_date,
-                Prescription.end_date,
-            )
-            .select_from(Prescription)
-            .join(Patient, Patient.id == Prescription.patient_id)
-        )
-        .where(
-            Patient.source_id == source_id,
-            MedicationAnnotation.attribute == predicate.attribute,
-            MedicationAnnotation.value.in_(predicate.values),
-            _exposure_condition(predicate.exposure, predicate.within_days, today=today),
-        )
-        .order_by(Prescription.start_date.desc())
     )
 
 

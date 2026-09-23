@@ -49,7 +49,7 @@ async def create_saved_question(
             group_by=body.group_by,
         )
     except ValueError as invalid:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(invalid)) from invalid
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
     return ApiResponse(data=SavedQuestionOut.model_validate(row))
 
 

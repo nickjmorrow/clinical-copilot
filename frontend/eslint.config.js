@@ -71,8 +71,8 @@ export default tseslint.config(
       ],
 
       // "SSE uses `fetch` + `ReadableStream`, never `EventSource`" —
-      // EventSource cannot POST and cannot set headers, so it cannot carry the
-      // token that `src/api/auth.ts` exists to supply.
+      // EventSource cannot POST, cannot set headers and cannot be aborted
+      // cleanly. See `src/api/stream.ts`.
       'no-restricted-globals': [
         'error',
         {
@@ -181,8 +181,10 @@ export default tseslint.config(
       'unicorn/no-array-sort': 'off',
       'unicorn/prefer-iterator-to-array': 'off',
 
-      // The module-level `provider` in `src/api/auth.ts` IS the seam — one
-      // mutable slot a host app fills at startup. That is the documented design.
+      // `turns.test.ts` numbers its fixture events from one module-level
+      // counter, so every event in a test gets the next `seq` the way the
+      // server would hand them out. A counter threaded through every fixture
+      // helper instead would be noise in every line of that file.
       'unicorn/no-top-level-assignment-in-function': 'off',
 
       // `response.json().catch(() => null)` is clearer than the try/await form

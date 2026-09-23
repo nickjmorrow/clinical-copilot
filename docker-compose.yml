@@ -55,13 +55,8 @@ services:
       target: dev
     environment:
       DATABASE_URL: postgresql+asyncpg://app:app@db:5432/app
-      # Read from your .env (gitignored). Never hardcode it here.
-      #
-      # Defaulted to empty rather than declared required (`:?`) on purpose: the
-      # required form makes EVERY compose subcommand fail without a .env,
-      # including `down`, `ps`, and `logs`. The backend validates the key at
-      # startup instead and says exactly what to do — see app/config.py.
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # No ANTHROPIC_API_KEY: the API never talks to the model. Only the
+      # worker does, so only the worker is handed the key.
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_FORMAT: ${LOG_FORMAT:-console}
       CORS_ORIGINS: http://localhost:3000
@@ -77,7 +72,7 @@ services:
         condition: service_completed_successfully
 
   # The same image as the backend, running a different entrypoint. A separate
-  # PROCESS is the part that matters — see backend/app/worker.py — not a
+  # PROCESS is the part that matters — see backend/app/worker/ — not a
   # separate build. This is also where you would scale out: run two and they
   # claim different rows, because `for update skip locked` says so.
   worker:
@@ -92,6 +87,13 @@ services:
     command: ['python', '-m', 'app.worker.dev']
     environment:
       DATABASE_URL: postgresql+asyncpg://app:app@db:5432/app
+      # Read from your .env (gitignored). Never hardcode it here.
+      #
+      # Defaulted to empty rather than declared required (`:?`) on purpose: the
+      # required form makes EVERY compose subcommand fail without a .env,
+      # including `down`, `ps`, and `logs`. The worker checks the key when it
+      # starts and says exactly what to do — see AnthropicProvider in
+      # backend/app/llm/anthropic_provider.py.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_FORMAT: ${LOG_FORMAT:-console}

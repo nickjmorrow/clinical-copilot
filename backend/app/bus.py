@@ -148,5 +148,5 @@ async def publish(session: AsyncSession, channel: str, frame: dict[str, Any]) ->
 
 
 # One per process. Started and stopped by the app lifespan in main.py, and by
-# the worker in worker.py.
+# the worker in worker/loop.py.
 bus = Bus()

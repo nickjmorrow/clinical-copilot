@@ -14,7 +14,6 @@ from typing import Any
 import httpx
 import pytest
 
-from app.api import deps
 from app.bus import bus
 from app.config import settings
 from app.main import app
@@ -146,20 +145,6 @@ async def test_a_visitor_has_none_of_the_curator_or_auditor_surfaces(
     response = await browsers().request(method, path, json=body)
 
     assert response.status_code == 403
-
-
-async def test_a_signed_in_user_is_still_themselves_in_public_mode(public, browsers, monkeypatch):
-    """With an issuer configured too, a token wins and its absence is a visitor
-    — so curators can sign in on a public deployment once a login exists."""
-    monkeypatch.setattr(settings, "oidc_issuer", "https://issuer.test")
-    monkeypatch.setattr(deps, "_verified_subject", lambda _credentials: "user_abc123")
-    browser = browsers()
-
-    signed_in = await browser.get("/api/access/me", headers={"Authorization": "Bearer t"})
-    anonymous = await browser.get("/api/access/me")
-
-    assert signed_in.json()["data"]["userId"] == "user_abc123"
-    assert anonymous.json()["data"]["userId"].startswith("visitor:")
 
 
 # --- cost ceilings ------------------------------------------------------------

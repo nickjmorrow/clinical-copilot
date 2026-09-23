@@ -71,7 +71,8 @@ services:
       # Public mode, on by default because this file is for a deployment
       # anyone can open — see app/config.py. Each browser gets its own
       # anonymous identity and no roles; the curator surfaces stay closed.
-      # Turn it off only for a private deployment behind OIDC.
+      # Off, every request is the one dev user — fine on your own machine,
+      # not on a URL strangers can reach.
       VISITOR_MODE: ${VISITOR_MODE:-true}
       VISITOR_COOKIE_SECURE: ${VISITOR_COOKIE_SECURE:-true}
       # The ceilings on what that costs. Messages per visitor per hour, and

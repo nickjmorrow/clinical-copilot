@@ -19,10 +19,8 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import DbSession, RequireCurator
 from app.api.schemas import ApiResponse, ScheduleIn, ScheduleOut
-from app.logging import get_logger
 from app.services import schedule_service
 
-logger = get_logger(__name__)
 router = APIRouter(prefix="/schedules", tags=["schedules"])
 
 
@@ -42,7 +40,7 @@ async def create_schedule(
     # What is left is the thing a JSON Schema cannot say: a prompt of nothing
     # but whitespace is not a prompt.
     if not body.prompt.strip():
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "prompt cannot be empty")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "prompt cannot be empty")
 
     schedule = await schedule_service.create_schedule(
         session,

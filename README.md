@@ -417,10 +417,10 @@ to be confidently wrong.
 [CONVENTIONS.md § What is deliberately missing](./CONVENTIONS.md#what-is-deliberately-missing)
 says when to add each, and which one is the real architectural change.
 
-Authentication is **not** on that list any more: `OIDC_ISSUER` unset runs the
-app with no accounts at all, and setting it turns on real JWKS verification
-against any OIDC provider. See [CONVENTIONS.md §
-Authentication](./CONVENTIONS.md#authentication).
+There is no sign-in. Locally everything runs as one dev user; the public demo
+gives each browser an anonymous identity of its own. Adding a real identity
+provider is one function — see [CONVENTIONS.md §
+Identity](./CONVENTIONS.md#identity).
 
 ## Author
 

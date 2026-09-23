@@ -1,10 +1,9 @@
 /**
  * SSE consumption.
  *
- * WHY NOT `EventSource`: it cannot set headers, so the moment this app has auth
- * it is unusable — and it gives you no way to abort cleanly. `fetch` +
- * `ReadableStream` gives headers, `AbortSignal`, and the same frame parsing,
- * which is the twenty lines below.
+ * WHY NOT `EventSource`: it cannot set headers or POST, and it gives you no
+ * way to abort cleanly. `fetch` + `ReadableStream` gives all three, and the
+ * same frame parsing, which is the twenty lines below.
  *
  * WHAT CHANGED WITH THE WORKER: this used to be the response to sending a
  * message, so it existed once per turn and died with it. Now it is a *view onto
@@ -12,11 +11,10 @@
  * watching — including a tab that refreshed halfway through an answer. `since`
  * is the whole interface: "I have seen up to here."
  *
- * Mirrors the frames published in backend/app/worker.py and forwarded by the
+ * Mirrors the frames published in backend/app/worker/turn.py and forwarded by the
  * stream endpoint in backend/app/api/routes/conversations.py.
  */
 
-import { authHeaders } from 'src/api/auth';
 import { ApiError, errorDetail } from 'src/api/client';
 import type { ConversationEvent, TaskStatus } from 'src/api/conversations';
 
@@ -56,12 +54,7 @@ export async function openConversationStream({
   signal,
   since,
 }: OpenStreamOptions): Promise<void> {
-  // The header is why this is `fetch` and not `EventSource`: EventSource cannot
-  // set one, which makes it unusable for any authenticated stream. That was
-  // true before there was any auth to speak of, and it is why turning auth on
-  // did not require rewriting this.
   const response = await fetch(`/api/conversations/${conversationId}/stream?since=${since}`, {
-    headers: await authHeaders(),
     signal,
   });
 

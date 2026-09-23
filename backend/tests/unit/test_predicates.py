@@ -29,7 +29,6 @@ from app.clinical.predicates import (
     parse_dimension,
     parse_measure,
     parse_predicate,
-    references,
     substitute,
 )
 
@@ -275,20 +274,7 @@ def test_medication_group_round_trips():
     )
 
 
-# ------------------------------------------------------- references helpers
-
-
-def test_references_finds_every_term():
-    predicate = parse_predicate(
-        {
-            "type": "all_of",
-            "of": [
-                {"type": "term", "term": "elderly"},
-                {"type": "not", "of": {"type": "term", "term": "nephrotoxic medication"}},
-            ],
-        }
-    )
-    assert references(predicate) == ("elderly", "nephrotoxic medication")
+# ------------------------------------------------------- substitution
 
 
 def test_substitute_replaces_every_reference():
@@ -296,9 +282,6 @@ def test_substitute_replaces_every_reference():
     built = AgeThreshold(operator=">=", value=65)
     resolved = substitute(predicate, lambda term: built)
     assert resolved == Resolved(term="elderly", predicate=built)
-    # A resolved reference still reports the term it came from, and still
-    # carries no unresolved reference of its own.
-    assert references(resolved) == ("elderly",)
 
 
 def test_observation_codes_walks_composition():

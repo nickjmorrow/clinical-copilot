@@ -83,14 +83,11 @@ export type DefinitionPatch = Partial<Omit<DefinitionDraft, 'changeReason'>> & {
 
 export const definitionKeys = {
   all: ['definitions'] as const,
-  detail: (id: string) => ['definitions', id] as const,
   history: (id: string) => ['definitions', id, 'history'] as const,
   modelCheck: ['definitions', 'modelCheck'] as const,
 };
 
 export const listDefinitions = () => apiFetch<Definition[]>('/clinical/definitions');
-
-export const getDefinition = (id: string) => apiFetch<Definition>(`/clinical/definitions/${id}`);
 
 export const getDefinitionHistory = (id: string) =>
   apiFetch<DefinitionHistoryEntry[]>(`/clinical/definitions/${id}/history`);

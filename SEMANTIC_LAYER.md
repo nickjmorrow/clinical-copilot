@@ -80,7 +80,8 @@ missing was surfacing that fact rather than leaving it implicit, which
 everywhere below) now makes cheap to do anywhere. The `system` column on
 `observations`/`medications`/`medication_annotations` remains real and
 still unsurfaced past the raw code — attributing an *individual value* to its
-code system is the same shape of question as `explain_patient` (§15), which
+code system is the same shape of question as "why is this patient not in the
+cohort" (§15), which
 was explicitly declined this round, so it stayed out rather than reopening
 that boundary through a different door.
 
@@ -331,11 +332,10 @@ session needs to see.
 ### 15. Why a patient is *not* in the cohort
 
 Still open, and deprioritised rather than forgotten — raised and explicitly
-set aside as lower value than the rest of this list. The
-backend half exists and is unused: `explain_patient`/`ExplainAnswer`/
-`LegEvidence` in `clinical_query_service.py` compute per-predicate attribution
-already, but there is no route and no UI calling them. Worth knowing if
-priorities change later — the expensive part is done.
+set aside as lower value than the rest of this list. A backend half was
+built — `explain_patient` in `clinical_query_service.py`, per-predicate
+attribution for one patient — and later deleted, because nothing ever called
+it. It is in the repository's first commit if priorities change.
 
 ### 16. Freshness, ownership and certification on a term
 
@@ -379,8 +379,8 @@ unreachable from the browser, deliberately — see
 ### 18. Export, and treating it as a governed act
 
 **Shipped.** `GET /clinical/definitions/export` — the whole model as JSON,
-every status, in one response — shipped as part of the editor (§6): the
-backup-and-diff story for choosing database rows over git-tracked files. The
+every status, in one response — shipped alongside the editor (§6) as an API
+for a curator to call, with no button of its own: the backup-and-diff story for choosing database rows over git-tracked files. The
 other kind of export this entry meant, a CSV of a *cohort's* rows, is now
 `POST /api/clinical/export` (`app/api/routes/cohort.py`), reached from
 the "Download CSV" button under a chat answer, next to the drilldown (§3), for
@@ -401,8 +401,8 @@ US states a user's queries are confined to; `None` is unconfined), applied by
 — the chat tool, saved-question runs, previews — via `Asker.scope_states`.
 `AccessPanel` in the frontend lets the dev user set their own scope and watch
 subsequent questions confine to it, which is the seam proven end to end rather
-than a permission model: `get_current_user()` still returns a constant, and
-scope-editing is gated `RequireCurator` on the theory that changing what your
+than a permission model: there is no sign-in, so the user is the dev user
+locally and an anonymous visitor on the public demo, and scope-editing is gated `RequireCurator` on the theory that changing what your
 own queries can see is a deliberate act, not a default.
 
 **Per-role column policy — shipped, granting nothing.** `resolve_columns`
@@ -419,10 +419,9 @@ ever wanted, is a one-line edit to a dict rather than a new system to design.
 same way `scope_states` already is, is what makes the check real rather than
 decorative — verified with a test that grants `auditor` a column via
 `monkeypatch`, confirms it reads through the real `find_patients`-shaped path,
-and confirms an ungranted role still can't. The authentication seam itself is
-unchanged and still the easy half whenever a second real user shows up —
-OIDC, two environment variables, see [CONVENTIONS.md §
-Authentication](./CONVENTIONS.md#authentication).
+and confirms an ungranted role still can't. The identity seam itself is
+still the easy half whenever a second real user shows up — one function, see
+[CONVENTIONS.md § Identity](./CONVENTIONS.md#identity).
 
 ## Deliberately not on this list
 
@@ -489,5 +488,5 @@ was decided and why; what actually shipped is marked inline.
 **What is actually left, in the order this file would now put it:** cohorts as
 refinable objects (§11's second half — the one substantial remaining piece of
 design, deliberately not attempted: a product decision to make on purpose
-rather than guess at); the reload-drift bound (§13); `explain_patient` wiring
-(§15), explicitly out of scope.
+rather than guess at); the reload-drift bound (§13); why a patient is not
+in the cohort (§15), explicitly out of scope.

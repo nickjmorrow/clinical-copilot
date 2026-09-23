@@ -37,12 +37,10 @@ from app.clinical.predicates import (
     parse_measure,
     parse_predicate,
 )
-from app.logging import get_logger
 from app.models import ClinicalDefinition
 from app.services import clinical_query_service, definition_service
 from app.services.clinical_query_service import Asker
 
-logger = get_logger(__name__)
 router = APIRouter(prefix="/clinical", tags=["clinical"])
 
 
@@ -92,14 +90,14 @@ async def preview_definition(
         try:
             parse_measure(body.logic)
         except InvalidPredicateError as invalid:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(invalid)) from invalid
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
         return ApiResponse(data=DefinitionPreviewOut(patient_count=None))
 
     if body.kind == "dimension":
         try:
             parse_dimension(body.logic)
         except InvalidPredicateError as invalid:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(invalid)) from invalid
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
         return ApiResponse(data=DefinitionPreviewOut(patient_count=None))
 
     try:
@@ -111,7 +109,7 @@ async def preview_definition(
         # substitution before it reaches `preview_definition`.
         predicate = await definition_service.resolve_references(session, predicate)
     except InvalidPredicateError as invalid:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(invalid)) from invalid
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
 
     asker = Asker(user_id=user_id)
     count = await clinical_query_service.preview_definition(session, asker, predicate=predicate)
@@ -139,7 +137,7 @@ async def create_definition(
             change_reason=body.change_reason,
         )
     except InvalidPredicateError as invalid:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(invalid)) from invalid
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
     except definition_service.DefinitionConflictError as conflict:
         raise HTTPException(status.HTTP_409_CONFLICT, str(conflict)) from conflict
     return ApiResponse(data=to_definition_out(row))
@@ -184,7 +182,7 @@ async def update_definition(
             change_reason=body.change_reason,
         )
     except InvalidPredicateError as invalid:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(invalid)) from invalid
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
     except definition_service.DefinitionConflictError as conflict:
         raise HTTPException(status.HTTP_409_CONFLICT, str(conflict)) from conflict
     return ApiResponse(data=to_definition_out(updated))

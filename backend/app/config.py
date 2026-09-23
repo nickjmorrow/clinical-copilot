@@ -11,11 +11,11 @@ from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# The identity every request gets when auth is switched off.
+# The identity every request gets outside public mode.
 #
 # Not a Settings field, because it is not environment-dependent: it is the one
-# user that exists when `OIDC_ISSUER` is unset. It lives here rather than beside
-# the auth seam in `api/deps.py` because the worker needs it too — an agent run
+# user that exists when there are no visitors. It lives here rather than beside
+# the identity seam in `api/deps.py` because the worker needs it too — an agent run
 # has to belong to somebody, and a process that serves no HTTP should not import
 # the HTTP layer to find out who.
 DEV_USER_ID = "dev-user"
@@ -70,10 +70,6 @@ class Settings(BaseSettings):
     # your longest real turn, or the sweeper will steal live work.
     task_stale_seconds: int = 900
 
-    # Backoff for a task that failed for a reason worth trying again — a rate
-    # limit, a provider outage. Doubles per attempt from the base, capped at the
-    # max. See RETRYABLE_ERROR_CODES in llm/types.py for which failures qualify;
-    # a wrong API key is not one of them.
     # Touched once per loop pass, so a container healthcheck can tell a worker
     # that is running from one that is wedged. The worker has no HTTP port, and
     # "the process exists" is not liveness — Docker already restarts a process
@@ -82,6 +78,10 @@ class Settings(BaseSettings):
     # tmpdir on a multi-user host. Override it if that stops being true.
     worker_heartbeat_path: Path = Path("/tmp/worker-alive")  # noqa: S108
 
+    # Backoff for a task that failed for a reason worth trying again — a rate
+    # limit, a provider outage. Doubles per attempt from the base, capped at the
+    # max. See RETRYABLE_ERROR_CODES in llm/types.py for which failures qualify;
+    # a wrong API key is not one of them.
     task_retry_base_seconds: float = 5.0
     task_retry_max_seconds: float = 120.0
 
@@ -147,45 +147,15 @@ class Settings(BaseSettings):
         "Use the language the user wrote in."
     )
 
-    # ---------------------------------------------------------------- auth
-    #
-    # Empty issuer means auth is OFF and every request is the dev user — which
-    # is what keeps `docker compose up` working with no accounts anywhere. Set
-    # these and the same endpoints start requiring a token.
-    #
-    # Deliberately not tied to a vendor. Every serious provider speaks OIDC, so
-    # the verification is identical and switching between Clerk, WorkOS, Logto,
-    # Auth0 or a self-hosted issuer is these two values.
-    #
-    #   oidc_issuer   https://your-tenant.example.com   (no trailing slash)
-    #   oidc_audience the API identifier the provider puts in `aud`
-    oidc_issuer: str = ""
-    oidc_audience: str = ""
-
-    # Defaults to the OIDC discovery convention. Override only if your provider
-    # puts its keys somewhere else.
-    oidc_jwks_url: str = ""
-
-    @property
-    def auth_enabled(self) -> bool:
-        return bool(self.oidc_issuer.strip())
-
-    @property
-    def jwks_url(self) -> str:
-        if self.oidc_jwks_url:
-            return self.oidc_jwks_url
-        return f"{self.oidc_issuer.rstrip('/')}/.well-known/jwks.json"
-
     # ----------------------------------------------------------- public mode
     #
-    # For a deployment anyone can open. With this on and no OIDC issuer, each
-    # browser gets an identity of its own — a random id in an HttpOnly cookie,
+    # For a deployment anyone can open. With this on, each browser gets an
+    # identity of its own — a random id in an HttpOnly cookie,
     # see `api/middleware.VisitorMiddleware` — instead of every request being
     # the one dev user. That is the difference between strangers sharing one
     # conversation list (and deleting each other's) and each having their own.
     # A visitor holds no roles, so everything gated to curators and auditors
-    # stays closed. With an issuer configured as well, a request carrying a
-    # valid token is that user, and one without is a visitor.
+    # stays closed.
     visitor_mode: bool = False
 
     # Send the cookie only over HTTPS. Leave this on anywhere real; browsers

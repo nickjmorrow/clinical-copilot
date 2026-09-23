@@ -24,9 +24,8 @@ export interface DefinitionActions {
  * needs. Not `preview` — that has no effect on anything cached, so the form
  * owns it directly, the way it owns the count it gets back.
  *
- * Every mutation invalidates the same four query keys: the list (a term
- * changed), the one detail (if it was open), its history (a new row just
- * landed), and the model check (an edit can turn a warning on or off — the
+ * Every mutation invalidates the same three query keys: the list (a term
+ * changed), its history (a new row just landed), and the model check (an edit can turn a warning on or off — the
  * `hyperkalemia` case is exactly this: matching nobody is a fact about the
  * dataset a threshold edit can change).
  */
@@ -37,7 +36,6 @@ export default function useDefinitionActions(): DefinitionActions {
     (id?: string) => {
       void queryClient.invalidateQueries({ queryKey: definitionKeys.modelCheck });
       if (id) {
-        void queryClient.invalidateQueries({ queryKey: definitionKeys.detail(id) });
         void queryClient.invalidateQueries({ queryKey: definitionKeys.history(id) });
       }
       // Returned, so the mutation waits for it: every caller navigates next,

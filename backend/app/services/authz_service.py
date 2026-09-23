@@ -28,7 +28,7 @@ from app.models import UserRole
 
 logger = get_logger(__name__)
 
-# What a role may do. Enforced by the route layer (not written yet) checking
+# What a role may do. Enforced by `require_any_role` in api/deps.py checking
 # membership; this module only says what a user has, not what a role permits.
 ANALYST: Final = "analyst"
 CURATOR: Final = "curator"
@@ -45,11 +45,6 @@ async def get_roles(session: AsyncSession, *, user_id: str) -> frozenset[str]:
     return frozenset(str(role) for role in row.roles)
 
 
-async def has_role(session: AsyncSession, *, user_id: str, role: str) -> bool:
-    roles = await get_roles(session, user_id=user_id)
-    return role in roles
-
-
 async def get_scope_states(session: AsyncSession, *, user_id: str) -> list[str] | None:
     """The states a user's clinical queries are confined to. `None` is
     unconfined — the state for a user with no row, same reasoning as
@@ -64,8 +59,8 @@ async def get_scope_states(session: AsyncSession, *, user_id: str) -> list[str] 
 async def set_roles(
     session: AsyncSession, *, user_id: str, roles: Sequence[str], scope_states: Sequence[str] | None
 ) -> UserRole:
-    """Upsert one user's roles and scope. Idempotent, like the seed that is
-    its only caller today."""
+    """Upsert one user's roles and scope. Idempotent: the seed calls it on
+    every run, and so does saving a scope in "Your access"."""
     unknown = [role for role in roles if role not in ROLES]
     if unknown:
         message = f"unknown role(s) {unknown}; expected one of {list(ROLES)}"

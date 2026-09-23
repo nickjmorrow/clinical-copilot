@@ -1,8 +1,8 @@
 """Answering one clinical question, end to end.
 
 **The only path from a question to rows.** Every route into this module —
-the model's tool, a cohort drilldown, an explain, an export, a curator's
-preview — ends up here, and here alone writes an audit row before returning.
+the model's tool, a cohort drilldown, an export, a curator's preview, the
+patient browser — ends up here, and here alone writes an audit row before returning.
 That is deliberate: "answered without being logged" is not a reachable state
 rather than a rule someone has to remember. `via` on every call says which
 surface asked, so "did the model ask for it" and "did anyone export it" stay
@@ -43,9 +43,6 @@ from app.clinical.assembler import (
     aggregate_query,
     browse_patients_count,
     browse_patients_query,
-    latest_observation_query,
-    leg_report_query,
-    matching_prescriptions_query,
     medication_aggregate_query,
     patient_query,
     touched_columns,
@@ -53,13 +50,9 @@ from app.clinical.assembler import (
 )
 from app.clinical.columns import MAX_ROWS, ColumnAccessError, resolve_columns
 from app.clinical.predicates import (
-    AllOf,
-    AnyOf,
     InvalidPredicateError,
-    MedicationAttribute,
     ObservationThreshold,
     Predicate,
-    Resolved,
 )
 from app.logging import get_logger
 from app.services import audit_service, authz_service, catalog_service, definition_service
@@ -427,162 +420,6 @@ async def _answer_aggregate(  # noqa: PLR0913
         executed_sql=statement,
         dataset=await catalog_service.current_dataset(session),
     )
-
-
-@dataclass(frozen=True)
-class LegEvidence:
-    term: str
-    admits: bool
-    description: str
-    notes: str
-    evidence: tuple[dict[str, Any], ...] = ()
-
-
-@dataclass(frozen=True)
-class ExplainAnswer:
-    outcome: str
-    source_id: str | None = None
-    legs: tuple[LegEvidence, ...] = ()
-    reason: str | None = None
-    unresolved: tuple[str, ...] = ()
-
-
-async def explain_patient(
-    session: AsyncSession,
-    asker: Asker,
-    *,
-    source_id: str,
-    terms: Sequence[str],
-    today: date | None = None,
-) -> ExplainAnswer:
-    """Why one patient is, or is not, in a cohort — SEMANTIC_LAYER.md § 15.
-
-    One row, one boolean per resolved term, plus the evidence behind each leaf
-    predicate that has some: the value that was actually compared, or the
-    prescriptions that actually matched. Scope is not applied here — a curator
-    asking about a patient outside their scope should be told so by the
-    caller, not shown a row that silently does not exist.
-    """
-    as_of = today or date.today()  # noqa: DTZ011
-    resolution = await definition_service.resolve_terms(session, terms=terms)
-    term_names = tuple(r.term for r in resolution.resolved)
-
-    if not resolution.is_complete:
-        await audit_service.record_query(
-            session,
-            QueryAttempt(
-                asked_by=asker.user_id,
-                raw_question=f"explain {source_id}",
-                outcome="clarification_requested",
-                conversation_id=asker.conversation_id,
-                resolved_terms=term_names,
-                via="explain",
-            ),
-        )
-        return ExplainAnswer(
-            outcome="clarification_requested",
-            unresolved=resolution.unresolved,
-            reason=_unresolved_reason(resolution),
-        )
-
-    named = [(r.term, r.predicate) for r in resolution.resolved]
-    query = leg_report_query(named, source_id=source_id, today=as_of)
-    row = (await session.execute(query)).mappings().first()
-
-    if row is None:
-        await audit_service.record_query(
-            session,
-            QueryAttempt(
-                asked_by=asker.user_id,
-                raw_question=f"explain {source_id}",
-                outcome="rejected",
-                conversation_id=asker.conversation_id,
-                resolved_terms=term_names,
-                rejection_reason="no such patient",
-                via="explain",
-            ),
-        )
-        return ExplainAnswer(outcome="rejected", reason=f"no patient with id {source_id!r}")
-
-    # A list comprehension, not a generator expression: `await` inside a lazy
-    # generator expression makes it an async generator, which `tuple()` cannot
-    # consume. Eager and in brackets sidesteps that.
-    legs = tuple(
-        [
-            LegEvidence(
-                term=r.term,
-                admits=bool(row[r.term]),
-                description=r.description,
-                notes=r.notes,
-                evidence=await _evidence_for(
-                    session, r.predicate, source_id=source_id, today=as_of
-                ),
-            )
-            for r in resolution.resolved
-        ]
-    )
-
-    await audit_service.record_query(
-        session,
-        QueryAttempt(
-            asked_by=asker.user_id,
-            raw_question=f"explain {source_id}",
-            outcome="answered",
-            conversation_id=asker.conversation_id,
-            resolved_terms=term_names,
-            columns_touched=touched_columns([r.predicate for r in resolution.resolved]),
-            row_count=1,
-            via="explain",
-            definition_versions={r.term: r.version for r in resolution.resolved},
-        ),
-    )
-    return ExplainAnswer(outcome="answered", source_id=source_id, legs=legs)
-
-
-async def _evidence_for(
-    session: AsyncSession, predicate: Predicate, *, source_id: str, today: date
-) -> tuple[dict[str, Any], ...]:
-    """The rows behind a leaf predicate, for the terms that have any.
-
-    Recurses into `AllOf`/`AnyOf`/`Resolved` so a composed term ("renal risk
-    on a nephrotoxin") reports evidence for each thing it is made of. `Not`
-    and the patient-column predicates are skipped: negation's evidence is an
-    absence, and age or vital status is already the boolean itself.
-    """
-    match predicate:
-        case ObservationThreshold():
-            row = (
-                (await session.execute(latest_observation_query(predicate, source_id=source_id)))
-                .mappings()
-                .first()
-            )
-            return (dict(row),) if row is not None else ()
-        case MedicationAttribute():
-            rows = (
-                (
-                    await session.execute(
-                        matching_prescriptions_query(predicate, source_id=source_id, today=today)
-                    )
-                )
-                .mappings()
-                .all()
-            )
-            return tuple(dict(row) for row in rows)
-        case Resolved():
-            return await _evidence_for(
-                session, predicate.predicate, source_id=source_id, today=today
-            )
-        case AnyOf() | AllOf():
-            evidence: list[dict[str, Any]] = []
-            for member in predicate.of:
-                evidence.extend(
-                    await _evidence_for(session, member, source_id=source_id, today=today)
-                )
-            return tuple(evidence)
-        case _:
-            # `Not`, `AgeThreshold`, `VitalStatus` — see the docstring for why
-            # each is skipped rather than given evidence.
-            return ()
 
 
 async def preview_definition(

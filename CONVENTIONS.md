@@ -70,7 +70,7 @@ backend/app/
   models.py            SQLAlchemy models. THE SCHEMA'S SOURCE OF TRUTH.
   wire.py              The event shapes BOTH transports send. camelCase lives here.
   api/
-    deps.py            Shared dependencies, including the auth seam.
+    deps.py            Shared dependencies, including the identity seam.
     middleware.py      Request ids and access logging. Pure ASGI, not BaseHTTP.
     schemas.py         The {data, meta} envelope + the HTTP-only shapes.
     routes/            Thin: validate -> authorize -> call a service -> respond.
@@ -115,7 +115,7 @@ frontend/src/
   main.tsx             Mounts App inside its providers. No markup of its own.
   App.tsx              The route table: the sidebar, and the page the URL names.
   index.css            Tailwind + the @theme block. The only stylesheet there is.
-  api/                 The HTTP boundary: client, resources, SSE parsing, auth.
+  api/                 The HTTP boundary: client, resources, SSE parsing.
   turns.ts             The event log folded into what gets drawn. No React.
   format.ts            Durations, timestamps, tool-input summaries. No React.
   markdown.ts          Splitting half-written markdown mid-stream. No React.
@@ -362,47 +362,33 @@ Catch a chain, most specific first. A single broad `except` collapses "wait and
 retry" into "your key is wrong", and the caller can no longer tell them apart.
 See `llm/anthropic_provider.py` for the shape.
 
-### Authentication
+### Identity
 
-`get_current_user()` in `api/deps.py` is the seam, and it has three modes. With
-`OIDC_ISSUER` unset it returns a constant and the app runs with no accounts at
-all — which is what keeps `docker compose up` a single command. Set the issuer
-and the same function verifies a bearer token against that provider's JWKS and
-returns its `sub`.
+There is no sign-in. `get_current_user()` in `api/deps.py` is the one place
+that decides who a request is, and it has two modes.
 
-The third is **public mode** (`VISITOR_MODE`, on in `docker-compose.prod.yml`):
-`api/middleware.VisitorMiddleware` gives each browser a random id in an
-HttpOnly cookie, and that — prefixed `visitor:`, so it can never equal a real
-id — is the user. Because every query is already scoped by user id, visitors
-are isolated from each other with no other change, and because a visitor holds
-no roles, every curator and auditor surface stays closed. A valid bearer token
-still wins, so curators can sign in on a public deployment once a login exists.
+Outside public mode it returns a constant, `dev-user`, and the app runs with
+no accounts at all — which is what keeps `docker compose up` a single command.
 
-**Do not pick a provider here.** Every serious one speaks OIDC, so verification
-is identical for Clerk, WorkOS, Logto, Auth0 or something self-hosted, and the
-choice reduces to two environment variables. The part that genuinely differs —
-getting a token in the browser — is isolated in `frontend/src/api/auth.ts`:
-install your provider's SDK, call `setAccessTokenProvider` once, and every
-request and every stream carries the header.
+**Public mode** (`VISITOR_MODE`, on in `docker-compose.prod.yml`) is for a
+deployment anyone can open. `api/middleware.VisitorMiddleware` gives each
+browser a random id in an HttpOnly cookie, and that — prefixed `visitor:`, so
+it can never equal any other id — is the user. Because every query is already
+scoped by user id, visitors are isolated from each other with no other change,
+and because a visitor holds no roles, every curator and auditor surface stays
+closed.
 
-Two rules that are not style preferences:
-
-- **Name the algorithms.** `algorithms=["RS256", "ES256"]`, never "whatever the
-  token says". A decoder that trusts the token's own `alg` accepts one signed
-  with the public key as an HMAC secret.
-- **Never tell the client why.** Expired, wrong audience and bad signature are
-  one 401 with one message. The distinction belongs in your logs, where it helps
-  you, not in a response body, where it helps whoever is probing.
-
-This is also why `jwt` is PyJWT and not `python-jose`: the latter is unmaintained
-and carries CVE-2024-33663, an algorithm-confusion bug of exactly the first kind.
+Adding real sign-in is a change to that one function, because nothing below it
+wants anything but a user id. It was built once — OIDC, verified against the
+provider's JWKS — and removed unused; see
+[What is deliberately missing](#what-is-deliberately-missing).
 
 ### Authorization
 
 Scope by `user_id` **in the WHERE clause**, never as an assertion afterwards. A
 row belonging to someone else must be indistinguishable from one that does not
 exist. Every query goes through `get_current_user()` in `api/deps.py`, which
-is why each of its three modes was a one-function change.
+is why each of its modes was a one-function change.
 
 **Anything that keeps spending after its author has gone is curator-only.** A
 schedule is the model running on a timer on the deployment's API key, so
@@ -1112,6 +1098,7 @@ need it. The seam each one needs already exists.
 | --- | --- | --- |
 | Pagination | A conversation list or a transcript gets long enough to notice | The `{data, meta}` envelope already has the room |
 | Schedules UI | You tire of `curl` | `/api/schedules` exists and is unreachable from the browser |
+| Sign-in | A curator needs to edit on a public deployment | `get_current_user()` is the only thing that decides who a request is. Verify a token there — name the algorithms, and give every failure the same 401 — and nothing below it changes |
 | Multi-user sharing | Two people need the same conversation | Every query is scoped by `user_id`, so a link 404s for anyone else — sharing is a row, not a URL change |
 | Error tracking | You have users who will not tell you when it breaks | `ErrorBoundary.componentDidCatch`, and the exception handler in the API |
 | Prompt caching | The tools and system prompt together exceed ~1000 tokens | They already render as one stable prefix; below that size it will not cache at all |

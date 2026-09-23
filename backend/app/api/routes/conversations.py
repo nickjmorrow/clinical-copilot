@@ -124,7 +124,7 @@ async def update_conversation(
             # Rejected rather than quietly restoring the auto title: the old one
             # is gone by then, and inventing a different name than the one the
             # user cleared is a worse surprise than an error message.
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Title cannot be empty")
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Title cannot be empty")
         await conversation_service.rename_conversation(
             session, conversation=conversation, title=title
         )
@@ -181,7 +181,7 @@ async def send_message(
     """Append a message and queue the turn. Returns a receipt, not an answer."""
     content = body.content.strip()
     if not content:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Message cannot be empty")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Message cannot be empty")
 
     conversation = await conversation_service.get_conversation(
         session, conversation_id=conversation_id, user_id=user_id
