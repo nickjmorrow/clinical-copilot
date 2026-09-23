@@ -1,5 +1,7 @@
 # Clinical Copilot
 
+[![CI](https://github.com/nickjmorrow/clinical-copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/nickjmorrow/clinical-copilot/actions/workflows/ci.yml)
+
 A chat app that answers clinical questions about a hospital's patients in plain
 English — and does **not** let the model write the SQL.
 

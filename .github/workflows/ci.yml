@@ -51,9 +51,9 @@ jobs:
       CHECK_REQUIRE_DB: '1'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
@@ -76,17 +76,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # No `version:` — it reads `packageManager` from frontend/package.json, so
       # CI, the Dockerfile and your machine all run the same pnpm. The path has
       # to be given: the action looks for package.json at the repository root
       # by default, finds none, and fails with "No pnpm version is specified".
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           package_json_file: frontend/package.json
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
