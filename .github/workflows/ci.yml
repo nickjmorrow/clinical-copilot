@@ -79,8 +79,12 @@ jobs:
       - uses: actions/checkout@v4
 
       # No `version:` — it reads `packageManager` from frontend/package.json, so
-      # CI, the Dockerfile and your machine all run the same pnpm.
+      # CI, the Dockerfile and your machine all run the same pnpm. The path has
+      # to be given: the action looks for package.json at the repository root
+      # by default, finds none, and fails with "No pnpm version is specified".
       - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
 
       - uses: actions/setup-node@v4
         with:
