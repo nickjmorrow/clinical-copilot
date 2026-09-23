@@ -310,7 +310,7 @@ export default function DefinitionForm({
         <label className={'flex flex-col gap-1'}>
           <span className={LABEL}>Notes — the rationale</span>
           <textarea
-            className={[INPUT, 'min-h-16 resize-y'].join(' ')}
+            className={[INPUT, '[field-sizing:content] min-h-16 resize-y'].join(' ')}
             onChange={(event) => {
               setNotes(event.target.value);
             }}
