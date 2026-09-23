@@ -3,16 +3,21 @@
 Separate from `clinical.py`'s `/clinical/context`, which is the model- and
 reader-facing view and deliberately withholds `logic` — see that module's
 docstring and SEMANTIC_LAYER.md § 2. Everything here shows `logic`, because
-the audience is a curator reviewing or changing what a term means, and an
-auditor reviewing what is live; `api/deps.RequireReviewer` gates reads to
-those two roles, `RequireCurator` gates every write to one.
+the audience is someone reviewing what a term means or changing it.
+
+**Reading is open to everyone; every write is curator-only.** A definition
+is the hospital's vocabulary — what "impaired renal function" means and why
+— not patient data, and showing exactly that is what this project is for,
+including to a visitor on the public demo. Writes (`RequireCurator`) change
+what every answer means, and the preview runs a query against patient data,
+so both stay closed to anyone without the role.
 """
 
 import uuid
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.api.deps import DbSession, RequireCurator, RequireReviewer
+from app.api.deps import CurrentUser, DbSession, RequireCurator
 from app.api.schemas import (
     ApiResponse,
     ChangeReasonIn,
@@ -27,15 +32,9 @@ from app.api.schemas import (
     to_definition_out,
     to_model_warning_out,
 )
-from app.clinical.predicates import (
-    InvalidPredicateError,
-    parse_dimension,
-    parse_measure,
-    parse_predicate,
-)
+from app.clinical.predicates import InvalidPredicateError
 from app.models import ClinicalDefinition
 from app.services import clinical_query_service, definition_service
-from app.services.clinical_query_service import Asker
 
 router = APIRouter(prefix="/clinical", tags=["clinical"])
 
@@ -49,7 +48,7 @@ async def _get_or_404(session: DbSession, definition_id: uuid.UUID) -> ClinicalD
 
 @router.get("/definitions")
 async def list_definitions(
-    session: DbSession, _user_id: RequireReviewer
+    session: DbSession, _user_id: CurrentUser
 ) -> ApiResponse[list[DefinitionOut]]:
     rows = await definition_service.list_definitions(session, include_unpublished=True)
     return ApiResponse(data=[to_definition_out(row) for row in rows])
@@ -61,38 +60,16 @@ async def preview_definition(
 ) -> ApiResponse[DefinitionPreviewOut]:
     """How many patients a *proposed* `logic` would match, without saving it.
 
-    Only a filter has a cohort to preview. A measure or a dimension still
-    goes through its own parser here, so a curator gets the same shape
-    feedback before saving that `create`/`update` would give after —
-    SEMANTIC_LAYER.md § 6's "an editor can tell you before you save."
+    Within the curator's own scope, like every other query: the `Asker` comes
+    from `build_asker`, not from the user id alone.
     """
-    if body.kind == "measure":
-        try:
-            parse_measure(body.logic)
-        except InvalidPredicateError as invalid:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
-        return ApiResponse(data=DefinitionPreviewOut(patient_count=None))
-
-    if body.kind == "dimension":
-        try:
-            parse_dimension(body.logic)
-        except InvalidPredicateError as invalid:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
-        return ApiResponse(data=DefinitionPreviewOut(patient_count=None))
-
+    asker = await clinical_query_service.build_asker(session, user_id=user_id)
     try:
-        predicate = parse_predicate(body.logic)
-        # A proposal can be `{"type": "all_of", "of": [{"type": "term", ...}, ...]}`
-        # — composed from terms that already exist, like the running example
-        # itself. The assembler only ever sees predicates `load_vocabulary`
-        # has already substituted, so this preview needs the same
-        # substitution before it reaches `preview_definition`.
-        predicate = await definition_service.resolve_references(session, predicate)
+        count = await clinical_query_service.preview_logic(
+            session, asker, kind=body.kind, logic=body.logic
+        )
     except InvalidPredicateError as invalid:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
-
-    asker = Asker(user_id=user_id)
-    count = await clinical_query_service.preview_definition(session, asker, predicate=predicate)
     return ApiResponse(data=DefinitionPreviewOut(patient_count=count))
 
 
@@ -125,7 +102,7 @@ async def create_definition(
 
 @router.get("/definitions/{definition_id}/history")
 async def get_definition_history(
-    definition_id: uuid.UUID, session: DbSession, _user_id: RequireReviewer
+    definition_id: uuid.UUID, session: DbSession, _user_id: CurrentUser
 ) -> ApiResponse[list[DefinitionHistoryOut]]:
     await _get_or_404(session, definition_id)
     rows = await definition_service.definition_history(session, definition_id=definition_id)
@@ -193,7 +170,7 @@ async def delete_definition(
 
 @router.get("/model/check")
 async def check_model(
-    session: DbSession, _user_id: RequireReviewer
+    session: DbSession, _user_id: CurrentUser
 ) -> ApiResponse[list[ModelWarningOut]]:
     warnings = await definition_service.check_model(session)
     return ApiResponse(data=[to_model_warning_out(w) for w in warnings])

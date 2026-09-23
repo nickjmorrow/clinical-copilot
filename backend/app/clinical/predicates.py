@@ -650,6 +650,7 @@ def _require_code_list(field: str, value: Any) -> tuple[str, ...]:
 
 
 def _require_members(value: Any, *, depth: int) -> tuple[Predicate, ...]:
+    # PLR2004: two is the definition of a combination, not a tunable limit.
     if not isinstance(value, list) or len(cast("list[Any]", value)) < 2:  # noqa: PLR2004
         message = "`of` must be a list of at least two predicates; one is not a combination"
         raise InvalidPredicateError(message)
@@ -658,6 +659,7 @@ def _require_members(value: Any, *, depth: int) -> tuple[Predicate, ...]:
 
 
 def _require_bands(value: Any) -> tuple[tuple[str, int | None], ...]:
+    # PLR2004: one band is no breakdown at all, so two is the floor by definition.
     if not isinstance(value, list) or len(cast("list[Any]", value)) < 2:  # noqa: PLR2004
         message = "`bands` must list at least two bands, each {label, upto}; the last has no upto"
         raise InvalidPredicateError(message)

@@ -15,8 +15,8 @@ not silently answered without it. Quietly dropping a requested column answers a
 different question from the one asked, and the caller cannot tell — which is
 the same failure mode as dropping a filter.
 
-Age is the point of the design. It is derived from `date_of_birth` at query
-time and is freely available, while `date_of_birth` itself is withheld. That is
+Age is the point of the design. It is derived from `birth_date` at query
+time and is freely available, while `birth_date` itself is withheld. That is
 what lets "now just the ones over 65" be answered without the answer carrying a
 date of birth, and it is the concrete thing to show when someone asks what
 column-level control buys.

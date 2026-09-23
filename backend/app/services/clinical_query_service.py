@@ -32,7 +32,7 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects import postgresql
@@ -92,11 +92,9 @@ async def build_asker(
 ) -> Asker:
     """The one way an `Asker` gets built: fetch scope, fetch roles, wrap them.
 
-    Every route into this module used to repeat this exact sequence by hand
-    — `find_patients.py`, both handlers in `cohort.py`, and
-    `saved_questions.py`'s run route. One helper rather than four copies of
-    the same two-fetch dance, and the one place to update if a fifth caller
-    ever needs a third thing `Asker` carries.
+    Every caller — the chat tool, the cohort routes, a saved-question run, a
+    definition preview — goes through this, because an `Asker` built by hand
+    from a user id alone is unconfined: it silently drops the caller's scope.
     """
     scope_states = await authz_service.get_scope_states(session, user_id=user_id)
     roles = await authz_service.get_roles(session, user_id=user_id)
@@ -295,7 +293,7 @@ async def _answer_cohort(  # noqa: PLR0913 — the guardrail order in the module
     )
 
 
-async def _answer_aggregate(  # noqa: PLR0913
+async def _answer_aggregate(  # noqa: PLR0913 — the guardrail order in the module docstring is the argument list
     session: AsyncSession,
     asker: Asker,
     *,
@@ -422,6 +420,29 @@ async def _answer_aggregate(  # noqa: PLR0913
     )
 
 
+async def preview_logic(
+    session: AsyncSession, asker: Asker, *, kind: str, logic: object
+) -> int | None:
+    """Check a *proposed* definition's `logic`, and count what a filter matches.
+
+    Every kind is parsed, so a curator gets the same shape feedback before
+    saving that a create or an update would give after — SEMANTIC_LAYER.md
+    § 6's "an editor can tell you before you save". Only a filter has a cohort
+    to count; a measure or a dimension that parses returns `None`.
+
+    A filter can be composed from terms that already exist, and the assembler
+    only ever sees predicates with those references substituted — so the
+    proposal gets the same substitution `load_vocabulary` gives a saved one.
+    Raises `InvalidPredicateError` for anything that does not parse or
+    resolve.
+    """
+    built = definition_service.validate_shape(kind, logic)
+    if kind != "filter":
+        return None
+    predicate = await definition_service.resolve_references(session, cast("Predicate", built))
+    return await preview_definition(session, asker, predicate=predicate)
+
+
 async def preview_definition(
     session: AsyncSession, asker: Asker, *, predicate: Predicate, today: date | None = None
 ) -> int:
@@ -434,7 +455,7 @@ async def preview_definition(
     Still audited, `via="preview"` — a dry run against patient data is still a
     query against patient data.
     """
-    as_of = today or date.today()  # noqa: DTZ011
+    as_of = today or date.today()  # noqa: DTZ011 — a calendar date, not a timestamp
     query = patient_query([predicate], today=as_of, scope_states=asker.scope_states)
     statement = _render(query)
     try:
@@ -512,7 +533,7 @@ async def browse_patients(
     row-level scope, and its own audited `via="browse"`, because looking at
     the raw rows is still looking at patient data.
     """
-    as_of = today or date.today()  # noqa: DTZ011
+    as_of = today or date.today()  # noqa: DTZ011 — a calendar date, not a timestamp
     capped_limit = min(limit, MAX_ROWS)
 
     try:

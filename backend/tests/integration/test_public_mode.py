@@ -130,7 +130,7 @@ async def test_a_forged_cookie_cannot_choose_its_identity(public, browsers):
 @pytest.mark.parametrize(
     ("method", "path", "body"),
     [
-        ("GET", "/api/clinical/definitions", None),
+        ("POST", "/api/clinical/definitions/preview", {"kind": "filter", "logic": {}}),
         ("GET", "/api/audit/unresolved-terms", None),
         ("GET", "/api/clinical/patients", None),
         ("PUT", "/api/access/me", {"scopeStates": ["Massachusetts"]}),
@@ -145,6 +145,23 @@ async def test_a_visitor_has_none_of_the_curator_or_auditor_surfaces(
     response = await browsers().request(method, path, json=body)
 
     assert response.status_code == 403
+
+
+async def test_a_visitor_can_read_the_definitions_but_not_change_them(public, browsers):
+    """The vocabulary every answer rests on is the thing this demo exists to
+    show, so a visitor may read it — logic, history and model check included —
+    and may not write a word of it."""
+    browser = browsers()
+
+    listed = await browser.get("/api/clinical/definitions")
+    created = await browser.post(
+        "/api/clinical/definitions",
+        json={"term": "x", "kind": "filter", "logic": {}, "changeReason": "x"},
+    )
+
+    assert listed.status_code == 200
+    assert listed.json()["data"]
+    assert created.status_code == 403
 
 
 # --- cost ceilings ------------------------------------------------------------

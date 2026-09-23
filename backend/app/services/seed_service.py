@@ -149,7 +149,7 @@ async def seed_all(session: AsyncSession, *, source: Path, reset: bool = False) 
     as_of = synthea.as_of_date(prescriptions, latest)
     session.add(
         DatasetMeta(
-            source=f"Synthea CSV export ({source.name})",
+            source="Synthea CSV export",
             as_of_date=as_of,
             patient_count=len(patients),
             notes=(

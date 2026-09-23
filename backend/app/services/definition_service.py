@@ -621,7 +621,7 @@ async def create_definition(  # noqa: PLR0913 — one keyword per column; see up
     _require_one_of("kind", kind, KINDS)
     _require_one_of("entity", entity, ENTITIES)
     _require_one_of("status", status, STATUSES)
-    built = _validate_shape(kind, logic)
+    built = validate_shape(kind, logic)
     parse_invariants(list(invariants))
     present = await _catalog_codes(session)
     _check_own_codes(term, kind, built, present)
@@ -701,7 +701,7 @@ async def update_definition(  # noqa: PLR0913 — every field is independently o
     _require_one_of("kind", new_kind, KINDS)
     _require_one_of("entity", new_entity, ENTITIES)
     _require_one_of("status", new_status, STATUSES)
-    built = _validate_shape(new_kind, new_logic)
+    built = validate_shape(new_kind, new_logic)
     parse_invariants(new_invariants)
     present = await _catalog_codes(session)
     _check_own_codes(definition.term, new_kind, built, present)
@@ -956,7 +956,10 @@ async def _catalog_codes(session: AsyncSession) -> frozenset[str]:
     return frozenset(result.scalars().all())
 
 
-def _validate_shape(kind: str, logic: object) -> BuiltLogic:
+def validate_shape(kind: str, logic: object) -> BuiltLogic:
+    """Parse `logic` as the kind of definition it claims to be, or raise
+    `InvalidPredicateError`. The one check a create, an update and a preview
+    all run first."""
     if kind == "filter":
         return parse_predicate(logic)
     if kind == "measure":

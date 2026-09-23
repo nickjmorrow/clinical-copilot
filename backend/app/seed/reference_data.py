@@ -261,10 +261,7 @@ CLINICAL_DEFINITIONS: list[dict[str, Any]] = [
         "term": "renal risk on a nephrotoxin",
         "kind": "filter",
         "entity": "patient",
-        "description": (
-            "Impaired renal function together with a current nephrotoxic medication — "
-            "the running example, as one term."
-        ),
+        "description": "Impaired renal function together with a current nephrotoxic medication.",
         "logic": {
             "type": "all_of",
             "of": [
@@ -273,10 +270,11 @@ CLINICAL_DEFINITIONS: list[dict[str, Any]] = [
             ],
         },
         "notes": (
-            "Composed from two terms rather than restating either threshold, so there is one "
-            "place 60 is written and one place the tier list is written. Exists mostly to "
-            "prove composition works and to give a schedule something to ask for in three "
-            "words; a question that names both terms gets the same query."
+            "The patients most exposed to drug-induced kidney injury: function already reduced, "
+            "and an active prescription for something that can reduce it further. Composed from "
+            "the two terms rather than restating either threshold, so the eGFR cutoff and the "
+            "tier list are each written in one place and a change to either flows through. A "
+            "question that names both terms gets the same query."
         ),
         "synonyms": ["at renal risk", "nephrotoxic exposure with reduced kidney function"],
     },
@@ -287,7 +285,8 @@ CLINICAL_DEFINITIONS: list[dict[str, Any]] = [
         "description": "No current prescription for a high- or moderate-tier nephrotoxin.",
         "logic": {"type": "not", "of": {"type": "term", "term": "nephrotoxic medication"}},
         "notes": (
-            "Negation, stated. A patient with no prescriptions on file at all satisfies this "
+            "The negation of `nephrotoxic medication`. A patient with no prescriptions on file "
+            "at all satisfies this "
             "— 'not on a nephrotoxin' and 'no medication record' are different claims and "
             "this term is the first one. Useful with `impaired renal function` for the safety "
             "review question: who has reduced kidney function and is NOT on anything risky."
@@ -400,12 +399,8 @@ CLINICAL_DEFINITIONS: list[dict[str, Any]] = [
         # `entity` decides which assembler query shape this needs — `patient`
         # because each row is still a group of *patients* (grouped by the
         # tier of drug they're on), even though the tier itself is a fact
-        # about a medication. Was seeded as "medication" before `entity`
-        # became load-bearing, when multi-entity queries arrived —
-        # that value described what the dimension is *about*, not which query
-        # it needs, and the two came apart the moment routing started reading
-        # it. `nephrotoxic medication name` below is the dimension that
-        # actually needs the medication-entity query.
+        # about a medication. `nephrotoxic medication name` below is the
+        # dimension that needs the medication-entity query.
         "entity": "patient",
         "description": "The kidney-risk tier of a patient's current medications.",
         "logic": {
@@ -415,7 +410,7 @@ CLINICAL_DEFINITIONS: list[dict[str, Any]] = [
         },
         "notes": (
             "A patient on drugs in two tiers is counted in both — this dimension fans out. "
-            "The assembler therefore only allows a patient count against it; an average eGFR "
+            "So only a patient count is allowed against it; an average eGFR "
             "by tier would weight each patient by how many tiers they touch. Patients on "
             "nothing annotated do not appear at all, which is why a count by tier does not "
             "sum to the cohort."
@@ -435,8 +430,8 @@ CLINICAL_DEFINITIONS: list[dict[str, Any]] = [
         },
         "notes": (
             "Unlike `nephrotoxic tier`, this does not fan out patients — each row already is "
-            "one medication, so the ordinary `patient count` measure is exactly the right one "
-            "against it, not a special-cased one. Restricted to the high/moderate tier the "
+            "one medication, so `patient count` works against it as it does anywhere else. "
+            "Restricted to the high/moderate tier the "
             "same way `nephrotoxic medication` the filter term is; a drug annotated `low` or "
             "not annotated at all does not get a row, so counts here do not sum to the cohort "
             "either — the denominator is 'patients on any of these drugs', not 'all patients'."
@@ -450,8 +445,9 @@ CLINICAL_DEFINITIONS: list[dict[str, Any]] = [
         "description": "State of residence.",
         "logic": {"type": "patient_column", "column": "state"},
         "notes": (
-            "Present mostly to prove row-level scope: a user confined to one state sees one "
-            "group here. Synthea populations are usually a single state."
+            "Where the patient lives. A user whose access is confined to certain states sees "
+            "only those states here. Synthea generates a population one state at a time, so "
+            "this is usually a single group."
         ),
         "synonyms": ["by state"],
     },

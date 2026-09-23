@@ -21,7 +21,7 @@ Every function takes an explicit `session`, for the reason given in
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,6 +34,9 @@ from app.models import Conversation, EventRecord
 # direction: a user message sets the provisional title, which is a fact about
 # the conversation row. `conversation_service` imports nothing from here.
 from app.services.conversation_service import TITLE_MAX_LENGTH
+
+# Who a replayed block belongs to — `ChatMessage.role`, named once.
+Speaker = Literal["user", "assistant"]
 
 logger = get_logger(__name__)
 
@@ -177,7 +180,7 @@ async def events_since(
 # ------------------------------------------------------------------ replay
 
 
-def _replay_block(record: EventRecord) -> tuple[str, ContentBlock] | None:
+def _replay_block(record: EventRecord) -> tuple[Speaker, ContentBlock] | None:
     """One stored event as the model should see it, or None to leave it out."""
     data = record.data
 
@@ -263,7 +266,7 @@ def build_history(records: Sequence[EventRecord]) -> list[ChatMessage]:
     }
 
     # Pass 1: rows to (speaker, block), with orphaned tool calls answered.
-    pairs: list[tuple[str, ContentBlock]] = []
+    pairs: list[tuple[Speaker, ContentBlock]] = []
     orphans: list[str] = []
     repaired = 0
     for record in records:
@@ -307,6 +310,6 @@ def build_history(records: Sequence[EventRecord]) -> list[ChatMessage]:
         if messages and messages[-1].role == role:
             messages[-1].content.append(block)
         else:
-            messages.append(ChatMessage(role=role, content=[block]))  # type: ignore[arg-type]
+            messages.append(ChatMessage(role=role, content=[block]))
 
     return messages

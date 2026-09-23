@@ -7,10 +7,11 @@ for, grouped by the raw question and ranked by how often it has come up. It
 is a read-only page over rows that already exist, not a new capability, which
 is the whole reason this file is short.
 
-Gated `RequireReviewer` (curator or auditor) — the same guard the definitions
-editor's read side uses, and for the same reason: this is a curator deciding
-what to define next, or an auditor reviewing what the system could not
-answer, not something an ordinary chat session needs.
+Gated `RequireReviewer` (curator or auditor): this is a curator deciding what
+to define next, or an auditor reviewing what the system could not answer.
+Unlike the definitions, which anyone may read, it stays closed — its rows are
+other people's questions, verbatim, and on the public demo that would be every
+visitor reading every other visitor's.
 """
 
 from fastapi import APIRouter

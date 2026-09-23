@@ -15,7 +15,7 @@ from app.config import settings
 engine = create_async_engine(
     settings.database_url,
     # Surfaces a dead connection as a retry instead of an error after the
-    # database restarts — which it will, every time you edit schema.sql.
+    # database restarts — which it will, every time the stack is restarted.
     pool_pre_ping=True,
 )
 

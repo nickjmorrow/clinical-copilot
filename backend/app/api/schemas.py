@@ -164,9 +164,9 @@ def to_clinical_context(
 # --------------------------------------------------- the authoring surface
 #
 # SEMANTIC_LAYER.md § 2: a model view separate from the chat panel, that shows
-# `logic` — which `ClinicalContextOut` above deliberately withholds. Read by a
-# curator or an auditor, per `RequireReviewer` in `api/deps.py`; the model
-# never sees any of this.
+# `logic` — which `ClinicalContextOut` above deliberately withholds. Readable
+# by anyone (see `api/routes/definitions.py`); the model never sees any of
+# this.
 
 
 class DefinitionOut(ApiSchema):

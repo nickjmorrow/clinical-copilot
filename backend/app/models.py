@@ -42,7 +42,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 
 # N811: `UUID` is a class, not a constant — pep8-naming cannot tell.
-from sqlalchemy.dialects.postgresql import UUID as PgUUID  # noqa: N811
+from sqlalchemy.dialects.postgresql import UUID as PgUUID  # noqa: N811 — see above
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -101,8 +101,8 @@ class Conversation(Base):
 class EventRecord(Base):
     """One thing that happened, in order. Append-only — nothing updates a row.
 
-    See the long comment in db/schema.sql for why the transcript is an event log
-    rather than a messages table, and for the shape of `data` per `type`.
+    CONVENTIONS.md > The transcript says why the transcript is an event log
+    rather than a messages table; `app/wire.py` reads `data` per `type`.
     """
 
     __tablename__ = "event_records"
@@ -142,7 +142,8 @@ class Task(Base):
     """One unit of work a worker will pick up.
 
     Mutable, unlike EventRecord — this is the state of work in progress, not a
-    record of what happened. See db/schema.sql for why Postgres is the queue.
+    record of what happened. CONVENTIONS.md > The worker says why Postgres is the
+    queue.
     """
 
     __tablename__ = "tasks"
