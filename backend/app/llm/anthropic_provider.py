@@ -37,6 +37,31 @@ logger = get_logger(__name__)
 # wrong". They become different StreamError codes, so the boundary is named.
 _SERVER_ERROR_STATUS = 500
 
+# The account has no credit left, or has hit the spend limit set on it in the
+# console. The provider sends both as an ordinary 400 `invalid_request_error`
+# with no type of their own, so the message is the only thing that tells them
+# apart from a malformed request — which is why this is a list of phrases and
+# not an `except` clause. If the wording changes, the cost is falling back to
+# the generic "rejected the request" message, not a wrong answer.
+_OUT_OF_CREDIT_PHRASES = ("credit balance", "usage limits")
+
+_OUT_OF_CREDIT_MESSAGE = (
+    "This demo has run out of model credit, so it can't answer new questions "
+    "right now. Everything already here still works — please check back later."
+)
+
+
+def _bad_request_error(exc: anthropic.BadRequestError) -> StreamError:
+    message = exc.message.lower()
+    if any(phrase in message for phrase in _OUT_OF_CREDIT_PHRASES):
+        logger.error("llm out of credit")
+        return StreamError(code="out_of_credit", message=_OUT_OF_CREDIT_MESSAGE)
+
+    # The provider's own text stays in the log. It is written for whoever holds
+    # the key, and the person reading the chat is not necessarily that person.
+    logger.error("llm bad request", error=str(exc))
+    return StreamError(code="bad_request", message="The model provider rejected the request.")
+
 
 def _wire_block(block: ContentBlock) -> dict[str, Any]:
     match block:
@@ -281,8 +306,7 @@ class AnthropicProvider:
             logger.error("llm auth failed")
             yield StreamError(code="auth_failed", message="Invalid or missing API key.")
         except anthropic.BadRequestError as exc:
-            logger.error("llm bad request", error=str(exc))
-            yield StreamError(code="bad_request", message=str(exc))
+            yield _bad_request_error(exc)
         except anthropic.APIStatusError as exc:
             logger.error("llm api error", status_code=exc.status_code, error=str(exc))
             retryable = exc.status_code >= _SERVER_ERROR_STATUS

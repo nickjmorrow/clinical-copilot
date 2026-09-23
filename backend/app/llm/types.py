@@ -197,6 +197,7 @@ class StreamError:
         "rate_limited",
         "auth_failed",
         "bad_request",
+        "out_of_credit",
         "provider_unavailable",
         "connection_failed",
         "refused",

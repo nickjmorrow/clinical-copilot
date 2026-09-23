@@ -88,3 +88,16 @@ export function describeQuestion(question: {
   if (question.groupBy.length > 0) text += ` by ${question.groupBy.join(', ')}`;
   return text;
 }
+
+/**
+ * A failed turn's error as a person should read it.
+ *
+ * The worker records a failure as `code: message`. The code is for machines —
+ * it is what decides whether a turn is retried, and what you grep the logs
+ * for — and the message after it is already written for a reader. Showing
+ * both put `out_of_credit:` in front of an apology.
+ */
+export function describeTurnError(error: string): string {
+  const match = /^[a-z_]+: (.+)$/su.exec(error);
+  return match?.[1] ?? error;
+}

@@ -1,4 +1,5 @@
 import type { ConversationEvent } from 'src/api/conversations';
+import AuthorCredit from 'src/components/AuthorCredit';
 import Bubble from 'src/components/Bubble';
 import Column from 'src/components/Column';
 import StarterQuestions from 'src/components/StarterQuestions';
@@ -89,7 +90,7 @@ export default function MessageList({
       >
         <Column className={'flex min-h-full flex-col gap-6 py-6'}>
           {items.length === 0 && !isStreaming && (
-            <div className={'m-auto max-w-md px-4 text-center'}>
+            <div className={'m-auto max-w-md text-center sm:px-4'}>
               <p className={'text-sm font-medium text-ink'}>
                 Ask a clinical question about this hospital&rsquo;s patients.
               </p>
@@ -102,6 +103,7 @@ export default function MessageList({
                 All patient data here is synthetic. This is a demonstration, not a clinical decision
                 support tool.
               </p>
+              <AuthorCredit className={'mt-2'} />
             </div>
           )}
 

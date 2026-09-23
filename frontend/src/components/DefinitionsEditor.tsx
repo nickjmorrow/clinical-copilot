@@ -4,7 +4,9 @@ import { isForbidden } from 'src/api/client';
 import { definitionKeys, listDefinitions } from 'src/api/definitions';
 import CuratorsOnly from 'src/components/CuratorsOnly';
 import DefinitionForm from 'src/components/DefinitionForm';
+import DefinitionList from 'src/components/DefinitionList';
 import EmptyState from 'src/components/EmptyState';
+import PickFromList from 'src/components/PickFromList';
 import { paths } from 'src/paths';
 
 /**
@@ -33,12 +35,14 @@ export default function DefinitionsEditor() {
 
   if (selection === null) {
     return (
-      <EmptyState
-        detail={
-          'Every change here is versioned — see the history at the bottom of a definition once you have made one.'
-        }
-        title={'Pick a definition to edit, or start a new one.'}
-      />
+      <PickFromList list={<DefinitionList />}>
+        <EmptyState
+          detail={
+            'Every change here is versioned — see the history at the bottom of a definition once you have made one.'
+          }
+          title={'Pick a definition to edit, or start a new one.'}
+        />
+      </PickFromList>
     );
   }
 

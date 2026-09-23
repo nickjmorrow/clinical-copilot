@@ -108,7 +108,7 @@ export default function Composer({ isStreaming, onSend, onStop, ref }: Props) {
         >
           <textarea
             className={
-              'max-h-40 flex-1 resize-none overflow-y-auto bg-transparent px-1.5 py-1 text-sm leading-6 outline-none placeholder:text-ink-muted'
+              'max-h-40 flex-1 resize-none overflow-y-auto bg-transparent px-1.5 py-1 text-base leading-6 outline-none placeholder:text-ink-muted md:text-sm'
             }
             onChange={(event) => setValue(event.target.value)}
             onKeyDown={(event) => {

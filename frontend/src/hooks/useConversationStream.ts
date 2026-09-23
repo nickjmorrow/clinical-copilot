@@ -14,6 +14,7 @@ import {
   type SendMessageReceipt,
 } from 'src/api/conversations';
 import { openConversationStream, type StreamFrame, TERMINAL_STATUSES } from 'src/api/stream';
+import { describeTurnError } from 'src/format';
 
 const lastSeq = (events: ConversationEvent[]) =>
   events.reduce((highest, event) => Math.max(highest, event.seq), 0);
@@ -153,7 +154,7 @@ export default function useConversationStream(
             });
             break;
           }
-          if (frame.status === 'failed' && frame.error) setError(frame.error);
+          if (frame.status === 'failed' && frame.error) setError(describeTurnError(frame.error));
           if (TERMINAL_STATUSES.has(frame.status)) {
             settledTaskRef.current = frame.taskId;
             setResumeFrom(null);

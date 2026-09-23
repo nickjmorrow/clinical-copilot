@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
 import { listSavedQuestions, savedQuestionKeys } from 'src/api/savedQuestions';
 import EmptyState from 'src/components/EmptyState';
+import PickFromList from 'src/components/PickFromList';
 import SavedQuestionDetail from 'src/components/SavedQuestionDetail';
 import SavedQuestionForm from 'src/components/SavedQuestionForm';
+import SavedQuestionList from 'src/components/SavedQuestionList';
 import { paths } from 'src/paths';
 
 /**
@@ -24,12 +26,14 @@ export default function SavedQuestionsPanel() {
 
   if (selection === null) {
     return (
-      <EmptyState
-        detail={
-          'Running one re-asks the definitions layer every time — an edited threshold changes the answer, the way it would if you asked in chat.'
-        }
-        title={'Pick a saved question to run, or save a new one.'}
-      />
+      <PickFromList list={<SavedQuestionList />}>
+        <EmptyState
+          detail={
+            'Running one re-asks the definitions layer every time — an edited threshold changes the answer, the way it would if you asked in chat.'
+          }
+          title={'Pick a saved question to run, or save a new one.'}
+        />
+      </PickFromList>
     );
   }
 
