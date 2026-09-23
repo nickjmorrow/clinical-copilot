@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { listSavedQuestions, savedQuestionKeys } from 'src/api/savedQuestions';
 import DashboardCard from 'src/components/DashboardCard';
 import EmptyState from 'src/components/EmptyState';
+import LoadFailed from 'src/components/LoadFailed';
 
 /**
  * Every saved question, run and shown together — SEMANTIC_LAYER.md § 17: "a
@@ -14,7 +15,15 @@ import EmptyState from 'src/components/EmptyState';
 export default function Dashboard() {
   const questions = useQuery({ queryFn: listSavedQuestions, queryKey: savedQuestionKeys.all });
 
-  if (questions.error) return <EmptyState title={'Could not load your saved questions.'} />;
+  if (questions.error) {
+    return (
+      <LoadFailed
+        error={questions.error}
+        onRetry={() => void questions.refetch()}
+        title={'Could not load your saved questions.'}
+      />
+    );
+  }
 
   if (questions.data?.length === 0) {
     return (

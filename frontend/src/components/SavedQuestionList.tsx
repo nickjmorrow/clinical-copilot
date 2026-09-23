@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
+import { errorMessage } from 'src/api/client';
 import { listSavedQuestions, savedQuestionKeys } from 'src/api/savedQuestions';
+import InlineError from 'src/components/InlineError';
 import NewItemLink from 'src/components/NewItemLink';
 import { describeQuestion } from 'src/format';
 import { paths } from 'src/paths';
@@ -31,7 +33,12 @@ export default function SavedQuestionList() {
       </div>
 
       {questions.error ? (
-        <p className={'px-4 py-2 text-xs text-danger'}>Could not load your saved questions.</p>
+        <div className={'px-2'}>
+          <InlineError
+            message={`Could not load your saved questions. ${errorMessage(questions.error)}`}
+            onRetry={() => void questions.refetch()}
+          />
+        </div>
       ) : (
         <ul className={'flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2'}>
           {questions.data?.map((question) => (

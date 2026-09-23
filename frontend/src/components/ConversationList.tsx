@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
+import { errorMessage } from 'src/api/client';
 import { conversationKeys, listConversations } from 'src/api/conversations';
 import ConversationRow from 'src/components/ConversationRow';
+import InlineError from 'src/components/InlineError';
 import NewItemLink from 'src/components/NewItemLink';
 import useConversationActions from 'src/hooks/useConversationActions';
 import { paths } from 'src/paths';
@@ -45,6 +47,7 @@ export default function ConversationList() {
 
   const conversations = live.data ?? [];
   const shown = showArchive ? (archived.data ?? []) : conversations;
+  const current = showArchive ? archived : live;
 
   const open = (id: string) => {
     void navigate(paths.conversation(id));
@@ -128,6 +131,19 @@ export default function ConversationList() {
         aria-label={showArchive ? 'Archived conversations' : 'Conversations'}
         className={'min-h-0 flex-1 overflow-y-auto px-2 pb-2'}
       >
+        {actions.error && (
+          <div className={'mb-2'}>
+            <InlineError message={actions.error} onDismiss={actions.dismissError} />
+          </div>
+        )}
+
+        {current.error && (
+          <InlineError
+            message={`Could not load your conversations. ${errorMessage(current.error)}`}
+            onRetry={() => void current.refetch()}
+          />
+        )}
+
         {sections.map((section) => (
           <div key={section.title}>
             {/* Only worth a heading when there is something to tell it apart
@@ -160,7 +176,7 @@ export default function ConversationList() {
 
         {/* Only once the list has actually loaded: "No conversations yet"
             while the request is in flight is a false statement. */}
-        {(showArchive ? archived : live).isSuccess && shown.length === 0 && (
+        {current.isSuccess && shown.length === 0 && (
           <p className={'px-2.5 py-3 text-xs text-ink-muted'}>
             {showArchive ? 'Nothing archived.' : 'No conversations yet.'}
           </p>

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { errorMessage } from 'src/api/client';
 import {
   conversationKeys,
   type ConversationPatch,
@@ -8,6 +9,9 @@ import {
 } from 'src/api/conversations';
 
 export interface ConversationActions {
+  dismissError: () => void;
+  /** Why the last action failed, as a sentence, until the next one starts. */
+  error: null | string;
   isBusy: boolean;
   pin: (id: string, isPinned: boolean) => void;
   remove: (id: string) => void;
@@ -35,6 +39,11 @@ export interface ConversationActions {
  * shapes. `pin`, `rename` and `setArchived` are the same request with a
  * different body, and giving each its own `useMutation` would only give each
  * its own `isPending` for no one to read.
+ *
+ * **A failure is reported, not dropped.** These fire from a menu and have no
+ * form to put an error in, so a pin or a delete that failed used to look
+ * exactly like one that had not been tried. The message names which of the
+ * five it was, because the menu that asked is closed by the time it arrives.
  */
 export default function useConversationActions(): ConversationActions {
   const queryClient = useQueryClient();
@@ -43,18 +52,38 @@ export default function useConversationActions(): ConversationActions {
     void queryClient.invalidateQueries({ queryKey: conversationKeys.all });
   }, [queryClient]);
 
+  const [error, setError] = useState<null | string>(null);
+
   const patch = useMutation({
     mutationFn: ({ id, ...body }: ConversationPatch & { id: string }) =>
       updateConversation(id, body),
+    onError: (caught, body) => {
+      setError(`Could not ${describePatch(body)} that conversation. ${errorMessage(caught)}`);
+    },
+    onMutate: () => {
+      setError(null);
+    },
     onSuccess: invalidate,
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => deleteConversation(id),
-    onSuccess: invalidate,
+    onError: (caught) => {
+      setError(`Could not delete that conversation. ${errorMessage(caught)}`);
+    },
+    onMutate: () => {
+      setError(null);
+    },
+    // Settled, not success: a delete that failed was usually preceded by
+    // leaving the conversation, and the list should show it is still there.
+    onSettled: invalidate,
   });
 
   return {
+    dismissError: useCallback(() => {
+      setError(null);
+    }, []),
+    error,
     isBusy: patch.isPending || remove.isPending,
     pin: useCallback((id, isPinned) => patch.mutate({ id, pinned: isPinned }), [patch]),
     remove: useCallback((id) => remove.mutate(id), [remove]),
@@ -64,4 +93,12 @@ export default function useConversationActions(): ConversationActions {
       [patch],
     ),
   };
+}
+
+/** The verb for a patch, for "Could not ___ that conversation." */
+function describePatch(body: ConversationPatch): string {
+  if (body.title !== undefined) return 'rename';
+  if (body.pinned !== undefined) return body.pinned ? 'pin' : 'unpin';
+  if (body.archived !== undefined) return body.archived ? 'archive' : 'unarchive';
+  return 'update';
 }

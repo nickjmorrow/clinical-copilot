@@ -3,6 +3,7 @@ import { auditKeys, listUnresolvedTerms } from 'src/api/audit';
 import { isForbidden } from 'src/api/client';
 import CuratorsOnly from 'src/components/CuratorsOnly';
 import EmptyState from 'src/components/EmptyState';
+import LoadFailed from 'src/components/LoadFailed';
 import { formatDateTime } from 'src/format';
 
 /**
@@ -22,7 +23,15 @@ export default function UnresolvedTermsPanel() {
   });
 
   if (isForbidden(terms.error)) return <CuratorsOnly />;
-  if (terms.error) return <EmptyState title={'Could not load the unresolved-term report.'} />;
+  if (terms.error) {
+    return (
+      <LoadFailed
+        error={terms.error}
+        onRetry={() => void terms.refetch()}
+        title={'Could not load the unresolved-term report.'}
+      />
+    );
+  }
 
   if (terms.data?.length === 0) {
     return (

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
 import { listSavedQuestions, savedQuestionKeys } from 'src/api/savedQuestions';
 import EmptyState from 'src/components/EmptyState';
+import LoadFailed from 'src/components/LoadFailed';
 import PickFromList from 'src/components/PickFromList';
 import SavedQuestionDetail from 'src/components/SavedQuestionDetail';
 import SavedQuestionForm from 'src/components/SavedQuestionForm';
@@ -49,7 +50,15 @@ export default function SavedQuestionsPanel() {
   }
 
   if (questions.isPending) return null;
-  if (questions.error) return <EmptyState title={'Could not load your saved questions.'} />;
+  if (questions.error) {
+    return (
+      <LoadFailed
+        error={questions.error}
+        onRetry={() => void questions.refetch()}
+        title={'Could not load your saved questions.'}
+      />
+    );
+  }
 
   const question = questions.data.find((one) => one.id === selection);
   if (!question) {

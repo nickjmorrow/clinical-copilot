@@ -1,4 +1,4 @@
-import { apiFetch, apiRequest } from 'src/api/client';
+import { apiFetch, apiRequest, NetworkError } from 'src/api/client';
 import type { SavedQuestionRun } from 'src/api/savedQuestions';
 
 /**
@@ -29,14 +29,18 @@ export async function downloadCohortCsv(query: CohortQuery): Promise<void> {
     body: JSON.stringify(query),
     method: 'POST',
   });
-  const blob = await response.blob();
+  const blob = await response.blob().catch(() => {
+    throw new NetworkError('The download was interrupted. Try again.');
+  });
   const url = URL.createObjectURL(blob);
-  try {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'cohort.csv';
-    link.click();
-  } finally {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'cohort.csv';
+  link.click();
+  // Not revoked in the same tick as the click: the download reads the URL
+  // asynchronously, and some browsers — Safari among them — cancel it if the
+  // URL is gone by then.
+  setTimeout(() => {
     URL.revokeObjectURL(url);
-  }
+  }, 10_000);
 }

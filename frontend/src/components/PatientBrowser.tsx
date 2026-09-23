@@ -5,6 +5,7 @@ import { isForbidden } from 'src/api/client';
 import Button from 'src/components/Button';
 import CuratorsOnly from 'src/components/CuratorsOnly';
 import EmptyState from 'src/components/EmptyState';
+import LoadFailed from 'src/components/LoadFailed';
 import RowTable from 'src/components/RowTable';
 import { formatDate } from 'src/format';
 
@@ -27,7 +28,15 @@ export default function PatientBrowser() {
   });
 
   if (isForbidden(page.error)) return <CuratorsOnly />;
-  if (page.error) return <EmptyState title={'Could not load the patient table.'} />;
+  if (page.error) {
+    return (
+      <LoadFailed
+        error={page.error}
+        onRetry={() => void page.refetch()}
+        title={'Could not load the patient table.'}
+      />
+    );
+  }
 
   if (page.data?.outcome === 'rejected') {
     return <EmptyState detail={page.data.reason ?? undefined} title={'Refused.'} />;

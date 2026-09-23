@@ -6,6 +6,7 @@ import CuratorsOnly from 'src/components/CuratorsOnly';
 import DefinitionForm from 'src/components/DefinitionForm';
 import DefinitionList from 'src/components/DefinitionList';
 import EmptyState from 'src/components/EmptyState';
+import LoadFailed from 'src/components/LoadFailed';
 import PickFromList from 'src/components/PickFromList';
 import { paths } from 'src/paths';
 
@@ -47,7 +48,15 @@ export default function DefinitionsEditor() {
   }
 
   if (definitions.isPending) return null;
-  if (definitions.error) return <EmptyState title={'Could not load the definitions.'} />;
+  if (definitions.error) {
+    return (
+      <LoadFailed
+        error={definitions.error}
+        onRetry={() => void definitions.refetch()}
+        title={'Could not load the definitions.'}
+      />
+    );
+  }
 
   const selected =
     selection === 'new' ? null : definitions.data.find((definition) => definition.id === selection);

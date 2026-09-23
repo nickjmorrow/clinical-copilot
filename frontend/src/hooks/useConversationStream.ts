@@ -31,6 +31,13 @@ export interface ConversationStream {
   events: ConversationEvent[];
   isStreaming: boolean;
   liveText: string;
+  /**
+   * The conversation could not be fetched at all. Only while nothing has
+   * loaded: a background refetch failing under a transcript already on
+   * screen is not a reason to take the transcript away.
+   */
+  loadError: Error | null;
+  retryLoad: () => void;
   send: (content: string) => void;
   stop: () => void;
   thinkingText: string;
@@ -76,7 +83,11 @@ export default function useConversationStream(
 ): ConversationStream {
   const queryClient = useQueryClient();
 
-  const { data: conversation } = useQuery({
+  const {
+    data: conversation,
+    error: loadError,
+    refetch,
+  } = useQuery({
     // A draft has nothing to fetch. The null branch in `queryFn` is there
     // because the id in the closure is nullable; `enabled` is what stops it.
     enabled: conversationId !== null,
@@ -352,6 +363,8 @@ export default function useConversationStream(
     events,
     isStreaming: resumeFrom !== null || sendMutation.isPending,
     liveText,
+    loadError: conversation ? null : loadError,
+    retryLoad: useCallback(() => void refetch(), [refetch]),
     send,
     stop,
     thinkingText,

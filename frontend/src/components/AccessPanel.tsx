@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Button from 'src/components/Button';
-import EmptyState from 'src/components/EmptyState';
+import LoadFailed from 'src/components/LoadFailed';
 import useAccessActions from 'src/hooks/useAccessActions';
 import { LABEL } from 'src/styles';
 
@@ -37,12 +37,14 @@ function draftFor(pending: Draft, saved: null | string[]): 'unconfined' | string
 }
 
 export default function AccessPanel() {
-  const { access, error, isBusy, isPending, setScope } = useAccessActions();
+  const { access, error, isBusy, isPending, retry, setScope } = useAccessActions();
   const [pending, setPending] = useState<Draft>(null);
   const [saveError, setSaveError] = useState<null | string>(null);
 
   if (isPending) return null;
-  if (error || !access) return <EmptyState title={'Could not load your access.'} />;
+  if (error || !access) {
+    return <LoadFailed error={error} onRetry={retry} title={'Could not load your access.'} />;
+  }
 
   const draft = draftFor(pending, access.scopeStates);
   const isUnconfined = draft === 'unconfined';

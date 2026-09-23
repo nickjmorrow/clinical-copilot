@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
-import { isForbidden } from 'src/api/client';
+import { errorMessage, isForbidden } from 'src/api/client';
 import { checkModel, type Definition, definitionKeys, listDefinitions } from 'src/api/definitions';
+import InlineError from 'src/components/InlineError';
 import NewItemLink from 'src/components/NewItemLink';
 import { paths } from 'src/paths';
 import { SIDEBAR_HEADING } from 'src/styles';
@@ -50,7 +51,12 @@ export default function DefinitionList() {
       </div>
 
       {definitions.error ? (
-        <p className={'px-4 py-2 text-xs text-danger'}>Could not load the definitions.</p>
+        <div className={'px-2'}>
+          <InlineError
+            message={`Could not load the definitions. ${errorMessage(definitions.error)}`}
+            onRetry={() => void definitions.refetch()}
+          />
+        </div>
       ) : (
         <div className={'min-h-0 flex-1 overflow-y-auto px-2 pb-2'}>
           {GROUPS.map(({ kind, label }) => {

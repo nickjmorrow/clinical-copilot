@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+import { errorMessage } from 'src/api/client';
 import type { SavedQuestion } from 'src/api/savedQuestions';
 import { runSavedQuestion } from 'src/api/savedQuestions';
+import InlineError from 'src/components/InlineError';
 import SavedQuestionResult from 'src/components/SavedQuestionResult';
 import { describeQuestion } from 'src/format';
 
@@ -33,7 +35,12 @@ export default function DashboardCard({ question }: Props) {
       </div>
 
       {run.isPending && <p className={'text-xs text-ink-muted'}>Running…</p>}
-      {run.error && <p className={'text-xs text-danger'}>Could not run this question.</p>}
+      {run.error && (
+        <InlineError
+          message={`Could not run this question. ${errorMessage(run.error)}`}
+          onRetry={() => void run.refetch()}
+        />
+      )}
       {run.data && <SavedQuestionResult result={run.data} />}
     </div>
   );

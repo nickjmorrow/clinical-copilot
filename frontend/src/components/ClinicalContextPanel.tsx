@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { errorMessage } from 'src/api/client';
 import { fetchClinicalContext } from 'src/api/clinical';
+import InlineError from 'src/components/InlineError';
 import TermGroup from 'src/components/TermGroup';
 import { formatDate } from 'src/format';
 
@@ -38,7 +40,7 @@ interface Props {
  * is ask.
  */
 export default function ClinicalContextPanel({ onClose, onPickTerm }: Props) {
-  const { data, error, isPending } = useQuery({
+  const { data, error, isPending, refetch } = useQuery({
     queryFn: ({ signal }) => fetchClinicalContext(signal),
     queryKey: ['clinical', 'context'],
     // Definitions change when a person edits them, which is approximately
@@ -51,7 +53,14 @@ export default function ClinicalContextPanel({ onClose, onPickTerm }: Props) {
   }
 
   if (error) {
-    return <p className={'p-4 text-xs text-danger'}>Could not load the clinical terms.</p>;
+    return (
+      <div className={'p-4'}>
+        <InlineError
+          message={`Could not load the clinical terms. ${errorMessage(error)}`}
+          onRetry={() => void refetch()}
+        />
+      </div>
+    );
   }
 
   const { dataset, terms } = data;

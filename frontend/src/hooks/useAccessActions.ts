@@ -7,6 +7,7 @@ export interface AccessActions {
   error: Error | null;
   isBusy: boolean;
   isPending: boolean;
+  retry: () => void;
   setScope: (scopeStates: null | string[]) => Promise<Access>;
 }
 
@@ -33,6 +34,7 @@ export default function useAccessActions(): AccessActions {
     error: query.error,
     isBusy: update.isPending,
     isPending: query.isPending,
+    retry: useCallback(() => void query.refetch(), [query]),
     setScope: useCallback((scopeStates) => update.mutateAsync(scopeStates), [update]),
   };
 }

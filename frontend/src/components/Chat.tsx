@@ -1,5 +1,8 @@
 import type { Ref } from 'react';
+import { ApiError } from 'src/api/client';
 import Composer from 'src/components/Composer';
+import EmptyState from 'src/components/EmptyState';
+import LoadFailed from 'src/components/LoadFailed';
 import MessageList from 'src/components/MessageList';
 import useConversationStream from 'src/hooks/useConversationStream';
 
@@ -27,12 +30,35 @@ interface Props {
  *
  * `ChatPage` mounts this with `key={conversationId ?? 'new'}`, so switching
  * conversations remounts rather than reusing this instance with new props.
+ *
+ * **A conversation that will not load says so.** It used to render as an
+ * empty transcript — the starter questions and a composer, indistinguishable
+ * from a new conversation — and the first message sent from it failed. A 404
+ * is its own sentence, because it is the answer for a deleted conversation
+ * and for someone else's, which must look the same (CONVENTIONS.md >
+ * Authorization); anything else can be retried.
  */
 export default function Chat({ composerRef, conversationId, onCreated }: Props) {
-  const { error, events, isStreaming, liveText, send, stop, thinkingText } = useConversationStream(
-    conversationId,
-    onCreated,
-  );
+  const { error, events, isStreaming, liveText, loadError, retryLoad, send, stop, thinkingText } =
+    useConversationStream(conversationId, onCreated);
+
+  if (loadError instanceof ApiError && loadError.status === 404) {
+    return (
+      <EmptyState
+        detail={'It may have been deleted. Start a new conversation from the menu.'}
+        title={'That conversation is not available.'}
+      />
+    );
+  }
+  if (loadError) {
+    return (
+      <LoadFailed
+        error={loadError}
+        onRetry={retryLoad}
+        title={'Could not load this conversation.'}
+      />
+    );
+  }
 
   return (
     <div className={'flex min-h-0 flex-1 flex-col'}>
