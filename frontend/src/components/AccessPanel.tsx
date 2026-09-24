@@ -57,6 +57,10 @@ export default function AccessPanel() {
   // would be refused. Everyone else — every visitor to a public deployment —
   // sees their scope and cannot change it.
   const canEdit = access.roles.includes('curator');
+  // An anonymous visitor to the public demo. They hold no roles by design, and
+  // "Roles: none" plus a sentence about the curator role told them nothing
+  // they could use — so they get what they *can* do instead.
+  const isVisitor = access.userId.startsWith('visitor:');
 
   const toggleState = (state: string) => {
     const base = isUnconfined ? [] : draft;
@@ -85,20 +89,28 @@ export default function AccessPanel() {
       title={'Your access'}
       width={'form'}
     >
-      <div className={'mt-1'}>
-        <h3 className={LABEL}>Roles</h3>
-        <div className={'mt-2 flex flex-wrap gap-1.5'}>
-          {access.roles.map((role) => (
-            <span
-              className={'rounded-full bg-ink/5 px-2 py-0.5 text-[11px] text-ink-muted'}
-              key={role}
-            >
-              {role}
-            </span>
-          ))}
-          {access.roles.length === 0 && <span className={'text-xs text-ink-muted'}>none</span>}
+      {isVisitor ? (
+        <p className={'rounded-lg bg-ink/5 px-3 py-2.5 text-xs leading-relaxed text-ink-muted'}>
+          You are using the public demo as a visitor. You can ask questions, save them, and read
+          every definition the answers rely on. Changing a definition, or which patients a person
+          can see, is for curators — a role the demo does not hand out.
+        </p>
+      ) : (
+        <div className={'mt-1'}>
+          <h3 className={LABEL}>Roles</h3>
+          <div className={'mt-2 flex flex-wrap gap-1.5'}>
+            {access.roles.map((role) => (
+              <span
+                className={'rounded-full bg-ink/5 px-2 py-0.5 text-[11px] text-ink-muted'}
+                key={role}
+              >
+                {role}
+              </span>
+            ))}
+            {access.roles.length === 0 && <span className={'text-xs text-ink-muted'}>none</span>}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className={'mt-5 border-t border-ink/5 pt-4'}>
         <h3 className={LABEL}>Scope</h3>
@@ -139,7 +151,7 @@ export default function AccessPanel() {
 
         {saveError && <p className={'mt-2 text-xs text-danger'}>{saveError}</p>}
 
-        {!canEdit && (
+        {!canEdit && !isVisitor && (
           <p className={'mt-3 text-xs text-ink-muted'}>
             Changing your scope needs the curator role.
           </p>

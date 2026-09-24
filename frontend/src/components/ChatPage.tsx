@@ -8,7 +8,14 @@ import Chat from 'src/components/Chat';
 import ClinicalContextPanel from 'src/components/ClinicalContextPanel';
 import Column from 'src/components/Column';
 import EmptyState from 'src/components/EmptyState';
+import MenuButton from 'src/components/MenuButton';
 import { paths } from 'src/paths';
+
+interface Props {
+  /** The phone menu, whose button lives in this header on chat pages. */
+  isMenuOpen: boolean;
+  onOpenMenu: () => void;
+}
 
 // Tailwind's `lg`, where the terms panel sits beside the chat rather than
 // over it. Kept next to the one place that has to ask.
@@ -48,10 +55,10 @@ function scopeLabel(states: null | string[]): null | string {
  * else", which is worse.
  *
  * `/` is not a missing id, it is the **draft**: an empty transcript and a
- * composer, with no row behind it until a message is sent. See CONVENTIONS.md >
+ * composer, with no row behind it until a message is sent. See AGENTS.md >
  * Starting one.
  */
-export default function ChatPage() {
+export default function ChatPage({ isMenuOpen, onOpenMenu }: Props) {
   const { conversationId = null } = useParams();
   const navigate = useNavigate();
   const composer = useRef<{ insert: (text: string) => void }>(null);
@@ -111,7 +118,8 @@ export default function ChatPage() {
     <div className={'flex h-full min-w-0'}>
       <div className={'flex min-w-0 flex-1 flex-col'}>
         <header className={'border-b border-ink/5'}>
-          <Column className={'flex items-center gap-3 py-4'}>
+          <Column className={'flex items-center gap-3 py-3 md:py-4'}>
+            <MenuButton isOpen={isMenuOpen} onOpen={onOpenMenu} />
             <h2
               className={
                 'min-w-0 flex-1 truncate text-sm font-medium tracking-tight text-ink-muted'

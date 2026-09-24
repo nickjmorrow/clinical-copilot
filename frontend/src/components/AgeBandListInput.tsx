@@ -1,5 +1,5 @@
 import Button from 'src/components/Button';
-import { INPUT, LABEL } from 'src/styles';
+import { EDIT_ONLY, INPUT, LABEL } from 'src/styles';
 
 interface Band {
   label: string;
@@ -81,6 +81,8 @@ export default function AgeBandListInput({ bands, onChange }: Props) {
                 value={band.upto ?? ''}
               />
               <Button
+                aria-label={'Remove band'}
+                className={EDIT_ONLY}
                 disabled={bands.length <= 2}
                 onClick={() => {
                   remove(index);
@@ -93,7 +95,7 @@ export default function AgeBandListInput({ bands, onChange }: Props) {
           );
         })}
       </div>
-      <Button onClick={add} size={'sm'}>
+      <Button className={EDIT_ONLY} onClick={add} size={'sm'}>
         + Add band
       </Button>
     </div>

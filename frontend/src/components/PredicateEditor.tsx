@@ -8,7 +8,7 @@ import {
   PREDICATE_TYPES,
   VITAL_STATUSES,
 } from 'src/predicates';
-import { INPUT, LABEL } from 'src/styles';
+import { EDIT_ONLY, INPUT, LABEL } from 'src/styles';
 
 interface Props {
   filterTerms: string[];
@@ -67,7 +67,7 @@ export default function PredicateEditor({ filterTerms, onChange, onRemove, value
           ))}
         </select>
         {onRemove && (
-          <Button onClick={onRemove} size={'sm'}>
+          <Button className={EDIT_ONLY} onClick={onRemove} size={'sm'}>
             Remove
           </Button>
         )}
@@ -298,6 +298,7 @@ export default function PredicateEditor({ filterTerms, onChange, onRemove, value
             />
           ))}
           <Button
+            className={EDIT_ONLY}
             onClick={() => {
               onChange({ ...value, of: [...value.of, emptyPredicate('age_threshold')] });
             }}

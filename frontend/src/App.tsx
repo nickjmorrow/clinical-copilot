@@ -1,11 +1,12 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router';
+import { matchPath, Navigate, Route, Routes, useLocation } from 'react-router';
 import ChatPage from 'src/components/ChatPage';
 import Dashboard from 'src/components/Dashboard';
 import Loading from 'src/components/Loading';
+import MenuButton from 'src/components/MenuButton';
 import SavedQuestionsPanel from 'src/components/SavedQuestionsPanel';
 import Sidebar from 'src/components/Sidebar';
-import { paths, PATTERNS } from 'src/paths';
+import { CHAT_PATTERNS, paths, PATTERNS } from 'src/paths';
 
 // The curator side, loaded when first opened. Most people who open the app
 // only ask questions, and the definitions editor — a recursive predicate
@@ -37,6 +38,10 @@ export default function App() {
   const { pathname } = useLocation();
   const [menuOpenAt, setMenuOpenAt] = useState<null | string>(null);
   const isMenuOpen = menuOpenAt === pathname;
+  const openMenu = () => {
+    setMenuOpenAt(pathname);
+  };
+  const isChat = CHAT_PATTERNS.some((pattern) => matchPath(pattern, pathname) !== null);
 
   // Escape closes the drawer, as it does the terms panel. The listener exists
   // only while there is something to close.
@@ -65,31 +70,14 @@ export default function App() {
           it. A max-width here instead would park the scrollbar against the last
           word of every answer. */}
       <main className={'flex h-full min-w-0 flex-1 flex-col'}>
-        <div className={'flex items-center gap-2 border-b border-ink/5 px-2 py-2 md:hidden'}>
-          <button
-            aria-controls={'app-menu'}
-            aria-expanded={isMenuOpen}
-            aria-label={'Open the menu'}
-            className={'rounded-md p-2 text-ink-muted transition hover:text-ink'}
-            onClick={() => {
-              setMenuOpenAt(pathname);
-            }}
-            type={'button'}
-          >
-            <svg
-              aria-hidden={'true'}
-              className={'h-5 w-5'}
-              fill={'none'}
-              stroke={'currentColor'}
-              strokeLinecap={'round'}
-              strokeWidth={2}
-              viewBox={'0 0 24 24'}
-            >
-              <path d={'M4 7h16M4 12h16M4 17h16'} />
-            </svg>
-          </button>
-          <span className={'text-sm font-semibold tracking-tight'}>Clinical Copilot</span>
-        </div>
+        {/* Chat has a header of its own, and carries the menu button there
+            instead — two bars stacked over a phone screen is a sixth of it. */}
+        {!isChat && (
+          <div className={'flex items-center gap-2 border-b border-ink/5 px-3 py-2 md:hidden'}>
+            <MenuButton isOpen={isMenuOpen} onOpen={openMenu} />
+            <span className={'text-sm font-semibold tracking-tight'}>Clinical Copilot</span>
+          </div>
+        )}
 
         {/* min-h-0: the page below is a flex child that scrolls inside
             itself, and without it the bar above would push it off the end
@@ -102,7 +90,7 @@ export default function App() {
               you had open does not close on your first message. The two
               children only match; `ChatPage` reads the id with `useParams`
               and renders the transcript itself. */}
-              <Route element={<ChatPage />}>
+              <Route element={<ChatPage isMenuOpen={isMenuOpen} onOpenMenu={openMenu} />}>
                 <Route index />
                 <Route path={PATTERNS.conversation} />
               </Route>

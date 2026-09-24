@@ -9,7 +9,7 @@
  * trip over the next time one of them needs to change.
  *
  * No React import, so this lives at the top level rather than in
- * `components/` — the same reason `turns.ts`/`format.ts` do. See CONVENTIONS.md
+ * `components/` — the same reason `turns.ts`/`format.ts` do. See AGENTS.md
  * > Layout.
  */
 
@@ -26,3 +26,9 @@ export const LABEL = 'text-[11px] font-semibold tracking-wide text-ink-muted upp
  *  field someone is about to fill in. */
 export const SIDEBAR_HEADING =
   'px-2.5 pt-3 pb-1 text-[10px] font-medium tracking-wide text-ink-muted uppercase';
+
+// For a control that only means something while editing — "+ Add condition",
+// "Remove". Inside a disabled fieldset, which is how `DefinitionForm` shows a
+// definition read-only, it is hidden rather than greyed out: a button nobody
+// can press is noise in something that is there to be read.
+export const EDIT_ONLY = '[fieldset:disabled_&]:hidden';
