@@ -75,7 +75,7 @@ function emptyLogicFor(kind: Definition['kind']): LogicValue {
  *
  * Keyed by the selection in the parent, so switching which definition is
  * selected remounts this component instead of syncing props into state with
- * an effect — see CONVENTIONS.md > Frontend > "Reset state with a key."
+ * an effect — see AGENTS.md > Frontend > "Reset state with a key."
  *
  * **Read-only is the same form, disabled.** One `<fieldset disabled>` reaches
  * every control, including the ones deep inside the logic editors, so a

@@ -29,7 +29,7 @@ function fitHeight(element: HTMLTextAreaElement) {
  * server treats a new message as superseding the turn in flight — it retires
  * the old task before writing the new message, so the newest question is always
  * the one being answered — and a composer that locks itself for the duration
- * hides a capability the backend already has. See CONVENTIONS.md > Sending while one
+ * hides a capability the backend already has. See AGENTS.md > Sending while one
  * is running.
  *
  * That is also why there is one button rather than two. While a turn is running

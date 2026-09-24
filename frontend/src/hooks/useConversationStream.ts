@@ -73,7 +73,7 @@ export interface ConversationStream {
  * **A null `conversationId` is a draft**, and sending is what creates it. That
  * belongs here rather than in `ChatPage` because it is the same sentence as sending:
  * the id is a detail of how the message gets written down, not a thing the
- * layout above has to sequence. See CONVENTIONS.md > Starting one.
+ * layout above has to sequence. See AGENTS.md > Starting one.
  *
  * **Assumes it is remounted when `conversationId` changes.** `ChatPage` passes
  * `key={id ?? 'new'}` to `Chat` for exactly that reason, which is React's own

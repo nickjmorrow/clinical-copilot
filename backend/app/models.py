@@ -101,7 +101,7 @@ class Conversation(Base):
 class EventRecord(Base):
     """One thing that happened, in order. Append-only — nothing updates a row.
 
-    CONVENTIONS.md > The transcript says why the transcript is an event log
+    AGENTS.md > The transcript says why the transcript is an event log
     rather than a messages table; `app/wire.py` reads `data` per `type`.
     """
 
@@ -142,7 +142,7 @@ class Task(Base):
     """One unit of work a worker will pick up.
 
     Mutable, unlike EventRecord — this is the state of work in progress, not a
-    record of what happened. CONVENTIONS.md > The worker says why Postgres is the
+    record of what happened. AGENTS.md > The worker says why Postgres is the
     queue.
     """
 

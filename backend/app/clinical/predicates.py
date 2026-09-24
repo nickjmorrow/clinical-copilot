@@ -5,7 +5,7 @@ executed. Everything downstream — the assembler, the tool, the answer — trus
 that a `Predicate` came through here, so this is the only place that decides
 what a definition may express.
 
-**Specs are closed**, the same way tool schemas are (CONVENTIONS.md > Tools). Every
+**Specs are closed**, the same way tool schemas are (AGENTS.md > Tools). Every
 key declared, unknown keys rejected, unknown `type` rejected. A spec that is
 merely *parsed* rather than *validated* gives up the one guarantee the
 assembler relies on, and it does so silently — the failure arrives later, as a

@@ -115,7 +115,7 @@ describe('toTurnItems', () => {
 
 describe('mergeEvents', () => {
   it('deduplicates the deliberate overlap between fetch and stream by seq', () => {
-    // CONVENTIONS.md > Frontend: "Overlap and deduplicate; do not try to hand off
+    // AGENTS.md > Frontend: "Overlap and deduplicate; do not try to hand off
     // precisely." Both halves cover seq 2 here, which is the normal case and
     // not an error.
     const a = user('one');

@@ -186,7 +186,7 @@ a failure reads "the contextual tier stopped being excluded" rather than
 "expected 76, got 75". They run against a small, committed, real fixture —
 `backend/tests/support/synthea/` — rather than the full export, so the suite
 does not need a 1.77-million-row load to gate a commit. See
-[CONVENTIONS.md § Where tests go](../CONVENTIONS.md#where-tests-go) for why the fixture
+[AGENTS.md § Where tests go](../AGENTS.md#where-tests-go) for why the fixture
 is a subset in the same format rather than a format of its own.
 
 The four `live_only` cases in the same file need a real model and run

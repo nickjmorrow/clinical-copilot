@@ -91,7 +91,7 @@ async def test_stop_reason_tells_a_cancelled_turn_from_a_superseded_one(session)
 
     A bool cannot express that, which is why this returns a reason. Getting it
     backwards files a half-finished answer *below* the message that replaced it
-    — see CONVENTIONS.md > Sending while one is running.
+    — see AGENTS.md > Sending while one is running.
     """
     conversation = await conversation_service.create_conversation(session, user_id="dev-user")
 

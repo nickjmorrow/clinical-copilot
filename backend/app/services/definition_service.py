@@ -795,7 +795,7 @@ class ModelWarning:
     """One thing about the vocabulary worth a curator's attention.
 
     Not an error — the vocabulary still loads and still answers questions.
-    This is the feedback loop CONVENTIONS.md and SEMANTIC_LAYER.md both ask for:
+    This is the feedback loop AGENTS.md and SEMANTIC_LAYER.md both ask for:
     a term that cannot be built, and a filter that matches nobody in the
     loaded dataset, are both facts a definition's author would want to know
     without waiting for a clinician to notice.

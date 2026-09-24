@@ -152,7 +152,7 @@ async def test_a_failed_flush_mid_turn_is_retried_without_crashing_the_settle_pa
     a rollback, and does not exercise the expired-instance path at all. A NUL
     byte in a `tool_result`'s content is a reliable, deterministic way to get
     a real one: Postgres's JSONB rejects `\\u0000` outright, so writing it
-    fails the same way a conversation deleted mid-turn does — see CONVENTIONS.md's
+    fails the same way a conversation deleted mid-turn does — see AGENTS.md's
     "Roll back before the error path touches anything".
     """
     await transcript_service.add_user_message(session, conversation=conversation, text="hi")

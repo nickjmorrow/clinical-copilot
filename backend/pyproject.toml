@@ -51,7 +51,7 @@ select = [
     "UP",     # pyupgrade
     "ANN",    # flake8-annotations
     "ASYNC",  # flake8-async — blocking calls in async defs, which is the whole
-              # premise of "async def everywhere" in CONVENTIONS.md
+              # premise of "async def everywhere" in AGENTS.md
     "S",      # flake8-bandit
     "BLE",    # flake8-blind-except
     "FBT",    # flake8-boolean-trap
@@ -152,7 +152,7 @@ runtime-evaluated-decorators = ["fastapi.Depends", "fastapi.Query"]
 [tool.ruff.lint.pylint]
 # Set just above the worst function that exists rather than switched off. The
 # three that sit near these limits — the adapter's tool loop, the worker's
-# `_generate`, the SSE encoder — are complex because CONVENTIONS.md argues they
+# `_generate`, the SSE encoder — are complex because AGENTS.md argues they
 # should be, and the ceiling stops the next one being worse.
 max-args = 6
 max-branches = 16

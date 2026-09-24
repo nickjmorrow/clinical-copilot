@@ -2,7 +2,7 @@
  * One kind of term (filter, measure, or group-by), as a labelled list.
  *
  * Split out of `ClinicalContextPanel` rather than kept as a second component
- * in that file — CONVENTIONS.md > Layout: one component per file, named after
+ * in that file — AGENTS.md > Layout: one component per file, named after
  * what it exports.
  */
 

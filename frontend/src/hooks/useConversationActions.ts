@@ -23,7 +23,7 @@ export interface ConversationActions {
  * The four things you can do to a conversation from outside it.
  *
  * A hook rather than four `useMutation` calls in the sidebar, by the test in
- * CONVENTIONS.md: a conversation menu in a header, a keyboard shortcut, or a
+ * AGENTS.md: a conversation menu in a header, a keyboard shortcut, or a
  * right-click on a transcript would all want these unchanged. What they share
  * is not the four endpoints — it is the invalidation, which has to cover the
  * list, the archive *and* the open transcript, because archiving the

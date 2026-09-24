@@ -328,7 +328,7 @@ class AnthropicProvider:
         is no tool loop, no thinking to preserve, no cancellation checkpoint and
         no event to yield — all of which exist for a turn somebody is watching.
 
-        One broad `except` here, against the rule in CONVENTIONS.md, and the reason
+        One broad `except` here, against the rule in AGENTS.md, and the reason
         is the rule's own: a chain exists so the caller can tell "wait and
         retry" from "your key is wrong". This caller cannot act on either. Its
         entire contract is `str | None`, the failure is invisible to the user by

@@ -26,7 +26,7 @@ function codeText(node: ReactNode): string {
  * one turns every answer into an injection surface.
  *
  * Every element is styled explicitly rather than through a typography plugin,
- * because "Tailwind utilities only" is a rule in CONVENTIONS.md and a plugin is a
+ * because "Tailwind utilities only" is a rule in AGENTS.md and a plugin is a
  * second opinion about what a heading looks like.
  *
  * `memo` is load-bearing during streaming: `StreamingMarkdown` re-renders every

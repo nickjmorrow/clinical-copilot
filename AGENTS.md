@@ -990,7 +990,7 @@ lint:fix` and `pnpm format` before you push.
 `eslint.config.js` is built the same way as the backend's ruff config: take the
 broad recommended sets — typescript-eslint **strict + stylistic type-checked**,
 react-hooks, unicorn, jsx-a11y — then turn individual rules off with a note
-saying why. Each CONVENTIONS.md rule it enforces cites the line it comes from.
+saying why. Each AGENTS.md rule it enforces cites the line it comes from.
 
 The `off`s are the interesting part, because most of them are a general-purpose
 rule meeting a decision this codebase already made:

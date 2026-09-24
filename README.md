@@ -29,7 +29,7 @@ rows. It is a demonstration, not a clinical decision support tool.
 - [WRITEUP.md](./docs/WRITEUP.md) — why it is built this way, in 500 words
 - [DEMO.md](./docs/DEMO.md) — a script you can follow cold
 - [DATA_MODEL.md](./docs/DATA_MODEL.md) — the schema, as a diagram and as psql
-- [CONVENTIONS.md § The definitions layer](./CONVENTIONS.md#the-definitions-layer) — the
+- [AGENTS.md § The definitions layer](./AGENTS.md#the-definitions-layer) — the
   architecture, and the two rules holding it up
 - [SEMANTIC_LAYER.md](./docs/SEMANTIC_LAYER.md) — what a semantic-model product has
   that this does not, and the order to add it in
@@ -37,7 +37,7 @@ rows. It is a demonstration, not a clinical decision support tool.
 
 Postgres + FastAPI + React + a worker, four containers, one command. The
 scaffolding came from a reference architecture template; the conventions it
-brought — and the ones this project added — live in [CONVENTIONS.md](./CONVENTIONS.md).
+brought — and the ones this project added — live in [AGENTS.md](./AGENTS.md).
 
 ## Design decisions and trade-offs
 
@@ -48,7 +48,7 @@ brought — and the ones this project added — live in [CONVENTIONS.md](./CONVE
   model made up. *Trade-off:* it can only answer what the vocabulary can
   express; an unknown term gets a clarifying question, not a guess, and a new
   kind of question needs a new definition.
-  [More](./CONVENTIONS.md#the-definitions-layer)
+  [More](./AGENTS.md#the-definitions-layer)
 - **Definitions are validated data, not SQL snippets.** Each term is structured
   JSON checked against a closed allowlist, versioned with a reason for every
   change, and editable without a deploy. *Trade-off:* a small DSL to maintain,
@@ -57,12 +57,12 @@ brought — and the ones this project added — live in [CONVENTIONS.md](./CONVE
   results are rows; what the model sees and what the user sees are two
   different folds of the same log. *Trade-off:* every read is a replay, which
   is more machinery than a messages table.
-  [More](./CONVENTIONS.md#the-transcript)
+  [More](./AGENTS.md#the-transcript)
 - **Generation runs in a separate worker, with Postgres as the queue.**
   `FOR UPDATE SKIP LOCKED` to claim, `LISTEN`/`NOTIFY` to stream tokens, no
   Redis. Closing the tab doesn't lose an answer. *Trade-off:* cancellation has
   to travel through the database, and a dead worker needs a sweeper to notice
-  it. [More](./CONVENTIONS.md#the-worker)
+  it. [More](./AGENTS.md#the-worker)
 - **Guardrails live in the data layer, not the prompt.** A column allowlist
   that never returns names or birth dates, row-level scope in every `WHERE`
   clause, and an audit row for every query — refusals included. *Trade-off:*
@@ -71,7 +71,7 @@ brought — and the ones this project added — live in [CONVENTIONS.md](./CONVE
   anything but the adapter imports the LLM SDK, or anything outside the
   definitions layer reads the clinical tables. *Trade-off:* repo-specific
   tests to maintain, in exchange for rules that can't quietly erode.
-  [More](./CONVENTIONS.md#structural-tests)
+  [More](./AGENTS.md#structural-tests)
 - **A public demo without accounts.** Each browser gets an anonymous identity
   and its own conversations, bounded by per-visitor and daily cost limits.
   *Trade-off:* nothing follows you between devices, and the limits are checked
@@ -208,7 +208,7 @@ scripts/                 setup.sh and check.sh — the only two you run by hand
                          for everyday work — and deploy.sh, which ships it;
                          generate-synthea.sh and build-test-fixture.py are
                          one-time/occasional.
-CONVENTIONS.md           The engineering conventions, and the reasoning behind each.
+AGENTS.md           The engineering conventions, and the reasoning behind each.
 docs/WRITEUP.md          Why it is built this way, in 500 words.
 docs/DEMO.md             A demo script you can follow cold.
 docs/DATA_MODEL.md       The schema, as a diagram and as psql.
@@ -219,21 +219,21 @@ docs/screenshots/        The images in this README.
 
 The transcript is stored as an append-only event log rather than a messages
 table — one row per user message, model response, tool call, and tool result,
-with everything on screen derived by replaying it. [CONVENTIONS.md § The
-transcript](./CONVENTIONS.md#the-transcript) explains why that is the only shape that
+with everything on screen derived by replaying it. [AGENTS.md § The
+transcript](./AGENTS.md#the-transcript) explains why that is the only shape that
 survives contact with tools.
 
 Generation runs in a worker process against a Postgres-backed queue, and the
 streaming endpoint is a subscriber rather than the thing doing the work.
-[CONVENTIONS.md § The worker](./CONVENTIONS.md#the-worker) covers claiming, cancellation,
+[AGENTS.md § The worker](./AGENTS.md#the-worker) covers claiming, cancellation,
 the sweeper, and why the worker stays in its own process.
 
 ## What's deliberately not here
 
 Pagination, a schedules UI, multi-user sharing, error tracking, prompt
 caching. Each is cheap to add later and expensive to build before you need it,
-and the seam each one needs already exists. [CONVENTIONS.md § What is
-deliberately missing](./CONVENTIONS.md#what-is-deliberately-missing) says when
+and the seam each one needs already exists. [AGENTS.md § What is
+deliberately missing](./AGENTS.md#what-is-deliberately-missing) says when
 to add each.
 
 **Caching of answers is not on that list — it is refused on purpose.** The
@@ -245,8 +245,8 @@ to be confidently wrong.
 
 There is no sign-in. Locally everything runs as one dev user; the public demo
 gives each browser an anonymous identity of its own. Adding a real identity
-provider is one function — see [CONVENTIONS.md §
-Identity](./CONVENTIONS.md#identity).
+provider is one function — see [AGENTS.md §
+Identity](./AGENTS.md#identity).
 
 ## Author
 

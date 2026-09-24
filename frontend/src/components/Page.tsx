@@ -27,7 +27,7 @@ const WIDTHS = {
  * Seven pages used to spell this out themselves, and had drifted to four
  * widths — three of them forms that stretched to the edge of a wide window,
  * which is not a width anyone reads a form at. The pane scrolls rather than
- * the column for the reason CONVENTIONS.md gives for the chat: the scrollbar
+ * the column for the reason AGENTS.md gives for the chat: the scrollbar
  * rides the window's edge, not the text's.
  */
 export default function Page({ actions, children, description, title, width = 'reading' }: Props) {

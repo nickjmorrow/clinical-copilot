@@ -10,7 +10,7 @@ That is the architecture in one file, and the schema is where it is enforced
 — there is no `sql` property to pass, and no way to express "eGFR below 45"
 except by referring to a term that already means that.
 
-The handler is thin, per CONVENTIONS.md > Tools: it translates between the model's
+The handler is thin, per AGENTS.md > Tools: it translates between the model's
 arguments and `clinical_query_service`, which is the only path to the data.
 """
 

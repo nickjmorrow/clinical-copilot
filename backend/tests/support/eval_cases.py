@@ -32,7 +32,7 @@ not designed."
 **`hyperkalemia_on_raas` is zero real patients, in the fixture and in the full
 2,271-patient export alike.** It stays zero on purpose, as the case the model
 check exists to flag. Tuning the 5.5 mmol/L threshold to manufacture a match would be
-exactly the move CONVENTIONS.md and this project's standing rules forbid: "never
+exactly the move AGENTS.md and this project's standing rules forbid: "never
 tune a clinical threshold to make a demo look better." A hospital where nobody
 in the sampled data both takes a RAAS blocker and has been measured hyperkalemic
 is a fact about the sample, not a bug in the query, and the case now exists to

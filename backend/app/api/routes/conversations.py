@@ -158,7 +158,7 @@ async def delete_conversation(
     The task is superseded first, which narrows the window where a worker is
     mid-turn on a conversation that has stopped existing. It does not close it —
     the worker is what does that, and getting it wrong stopped the whole queue
-    rather than one turn. See CONVENTIONS.md > Deleting one that is still answering.
+    rather than one turn. See AGENTS.md > Deleting one that is still answering.
     """
     conversation = await conversation_service.get_conversation(
         session, conversation_id=conversation_id, user_id=user_id

@@ -10,7 +10,7 @@ import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 
 /**
- * The frontend's half of the contract in CONVENTIONS.md.
+ * The frontend's half of the contract in AGENTS.md.
  *
  * The backend has had `ruff` since the beginning; this is its counterpart, and
  * it is built the same way: take the broad recommended set, then turn off
@@ -21,7 +21,7 @@ import prettier from 'eslint-config-prettier';
  * About half of the contract is mechanical and lives here. The other half
  * ("server state is TanStack Query", "never render streamed text straight from
  * the stream") is judgement a linter cannot express, and is written down in
- * CONVENTIONS.md > Frontend. Neither replaces the other.
+ * AGENTS.md > Frontend. Neither replaces the other.
  */
 export default tseslint.config(
   { ignores: ['dist', 'node_modules'] },
@@ -41,7 +41,7 @@ export default tseslint.config(
     },
     plugins: { perfectionist },
     rules: {
-      // ---- CONVENTIONS.md rules, enforced ------------------------------------
+      // ---- AGENTS.md rules, enforced ------------------------------------
 
       // "Absolute imports only (`src/api/client`). Relative paths stop being
       // readable three directories in." The backend's `ban-relative-imports`
@@ -57,14 +57,14 @@ export default tseslint.config(
           paths: [
             {
               message:
-                'rehype-raw turns model output into raw HTML. Markdown.tsx must stay element-building (CONVENTIONS.md > Frontend).',
+                'rehype-raw turns model output into raw HTML. Markdown.tsx must stay element-building (AGENTS.md > Frontend).',
               name: 'rehype-raw',
             },
           ],
           patterns: [
             {
               group: ['./*', '../*'],
-              message: 'Absolute imports only: use `src/...` (CONVENTIONS.md > Frontend).',
+              message: 'Absolute imports only: use `src/...` (AGENTS.md > Frontend).',
             },
           ],
         },
@@ -199,7 +199,7 @@ export default tseslint.config(
 
       // ---- unicorn: configured rather than disabled ----------------------
 
-      // Enforces the CONVENTIONS.md naming rule instead of unicorn's kebab-case
+      // Enforces the AGENTS.md naming rule instead of unicorn's kebab-case
       // default: `Bubble.tsx` for a component, `useConversationStream.ts` for
       // a hook, `turns.ts` for a module.
       'unicorn/filename-case': ['error', { cases: { camelCase: true, pascalCase: true } }],

@@ -13,7 +13,7 @@ import { type RefObject, useEffect } from 'react';
  * earlier and unambiguous.
  *
  * Synchronising with something outside React is what effects are for — see
- * CONVENTIONS.md on when to write one — and the listeners are removed on unmount
+ * AGENTS.md on when to write one — and the listeners are removed on unmount
  * and whenever `isOpen` goes false, so nothing accumulates.
  */
 export default function useDismiss(

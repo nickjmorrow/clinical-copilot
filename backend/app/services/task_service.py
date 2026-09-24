@@ -314,7 +314,7 @@ async def supersede_active(session: AsyncSession, *, conversation_id: uuid.UUID)
     is already sitting after it in the log: flushing a half-sentence at that
     point files the answer to the old question *below* the question that
     replaced it, and leaves the next turn replaying a history that ends on an
-    assistant turn. See CONVENTIONS.md > Sending while one is running.
+    assistant turn. See AGENTS.md > Sending while one is running.
     """
     existing = await active_task(session, conversation_id=conversation_id)
     if existing is None:

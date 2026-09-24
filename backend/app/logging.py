@@ -1,6 +1,6 @@
 """Structured logging.
 
-Conventions (these are the rules, not suggestions — see CONVENTIONS.md § Logging):
+Conventions (these are the rules, not suggestions — see AGENTS.md § Logging):
 
 * The first argument is a **static string**. No f-strings, no interpolation.
   That string is the event name you grep and aggregate on; interpolating makes

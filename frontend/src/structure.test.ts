@@ -37,7 +37,7 @@ const relative = (file: string) => file.slice(SRC.length);
 // --------------------------------------------------------- semantic colours
 //
 // Every colour is a semantic token, never a literal: `bg-surface`, not
-// `bg-slate-50`; `text-danger`, not `text-red-700` (CONVENTIONS.md > Structural
+// `bg-slate-50`; `text-danger`, not `text-red-700` (AGENTS.md > Structural
 // tests, "No literal Tailwind colour anywhere in `src/`"). That is
 // what makes a theme a block of variable values rather than a `dark:` class on
 // every element. The trap is opacity: `border-black/10` is a hairline on one
@@ -109,7 +109,7 @@ describe('colours are semantic tokens', () => {
       offenders,
       'Use a token from the @theme block in src/index.css — `bg-surface`, `text-danger`, ' +
         '`text-on-accent`. For a fraction of a colour use `ink` (`border-ink/10`), which inverts ' +
-        'with the theme where `black` and `white` do not. See CONVENTIONS.md > Frontend.',
+        'with the theme where `black` and `white` do not. See AGENTS.md > Frontend.',
     ).toEqual([]);
   });
 
@@ -125,7 +125,7 @@ describe('colours are semantic tokens', () => {
 
 // ------------------------------------------------------- the view model is pure
 //
-// CONVENTIONS.md > Layout > The `.ts` files at the top level are the view
+// AGENTS.md > Layout > The `.ts` files at the top level are the view
 // model: they are "pure functions with no React in them, which is why they are
 // not in `components/`." The same holds for `src/api/`, the HTTP boundary.
 //
@@ -146,7 +146,7 @@ describe('the view model and the API boundary contain no React', () => {
 
 // ---------------------------------------------------- one thing, named for it
 //
-// CONVENTIONS.md > Frontend: "One component per file, default export, named to match
+// AGENTS.md > Frontend: "One component per file, default export, named to match
 // the file." `react/no-multi-comp` counts definitions and
 // `unicorn/filename-case` checks the case, but neither checks that the name in
 // the file is the name on the file — which is the half that makes a component
@@ -170,7 +170,7 @@ describe('a file is named after what it exports', () => {
 
 // ------------------------------------------- the view model is tested in place
 //
-// CONVENTIONS.md > Layout > Where tests go: "Frontend tests sit beside what they
+// AGENTS.md > Layout > Where tests go: "Frontend tests sit beside what they
 // test: `turns.test.ts` next to `turns.ts`. Vitest finds them anywhere, the
 // file it covers is one line away in the listing, and a module with no
 // neighbouring test is visible at a glance."
@@ -178,7 +178,7 @@ describe('a file is named after what it exports', () => {
 // The top-level `.ts` files are pure functions of their input — that is the
 // whole reason they are not in `components/` — so there is no excuse for one
 // without a test, and no renderer needed to write it. This is the check that
-// keeps the bar where CONVENTIONS.md puts it for putting a file there at all.
+// keeps the bar where AGENTS.md puts it for putting a file there at all.
 
 describe('every top-level view-model module has a test beside it', () => {
   const modules = FILES.filter(
@@ -193,7 +193,7 @@ describe('every top-level view-model module has a test beside it', () => {
         /\.ts$/,
         '.test.ts',
       )} beside it. It takes data and returns data, so the test needs no renderer — write it, ` +
-        'or the file belongs in a hook or a component instead. See CONVENTIONS.md > Layout.',
+        'or the file belongs in a hook or a component instead. See AGENTS.md > Layout.',
     ).toBe(true);
   });
 });

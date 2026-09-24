@@ -112,7 +112,7 @@ async def test_visitors_cannot_see_or_touch_each_others_conversations(public, br
     listed = (await alice.get("/api/conversations")).json()["data"]
     assert [one["id"] for one in listed] == [mine]
     assert (await bob.get("/api/conversations")).json()["data"] == []
-    # Indistinguishable from not existing, per CONVENTIONS.md > Authorization.
+    # Indistinguishable from not existing, per AGENTS.md > Authorization.
     assert (await bob.get(f"/api/conversations/{mine}")).status_code == 404
     assert (await bob.delete(f"/api/conversations/{mine}")).status_code == 404
 

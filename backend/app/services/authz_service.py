@@ -10,7 +10,7 @@ permission model, so this module proves the shape rather than implementing
 one: `ensure_dev_user` gives the dev user every role and an unconfined scope,
 which is what keeps `docker compose up` working with nobody locked out of
 anything. Turning it into something real is the two-environment-variable
-change CONVENTIONS.md § Authentication already describes for `get_current_user` —
+change AGENTS.md § Authentication already describes for `get_current_user` —
 this is its clinical-authorization counterpart.
 
 `scope_states` is row-level access in its smallest honest form: a list of

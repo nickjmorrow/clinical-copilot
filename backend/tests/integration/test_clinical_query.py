@@ -670,7 +670,7 @@ async def test_an_empty_definitions_table_leaves_the_prompt_alone(session):
     finally:
         # Private, deliberately — this is the same helper `seed_all` uses,
         # reached into directly because a test restoring shared state is
-        # exactly the case CONVENTIONS.md's SLF001 exemption for tests/ is for.
+        # exactly the case AGENTS.md's SLF001 exemption for tests/ is for.
         await seed_service._insert_definitions(session)
         await session.commit()
         definition_service.invalidate()

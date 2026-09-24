@@ -3,7 +3,7 @@ import type { ConversationEvent } from 'src/api/conversations';
 /**
  * One thing to draw.
  *
- * The transcript is stored as an append-only event log (see CONVENTIONS.md > The
+ * The transcript is stored as an append-only event log (see AGENTS.md > The
  * transcript), which is the right shape for writing and the wrong shape for
  * rendering: a tool call and the result that answered it are two rows, and they
  * are one card on screen. `TurnItem` is the display shape, and `toTurnItems` is

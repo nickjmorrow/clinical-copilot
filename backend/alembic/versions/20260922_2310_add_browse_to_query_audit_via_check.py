@@ -19,7 +19,7 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    # Autogenerate saw nothing here, the same blind spot CONVENTIONS.md documents
+    # Autogenerate saw nothing here, the same blind spot AGENTS.md documents
     # for a partial index's WHERE clause: it compares a CHECK constraint by
     # name, not by the expression inside it, so a widened `via in (...)` list
     # produces an empty migration unless written by hand.

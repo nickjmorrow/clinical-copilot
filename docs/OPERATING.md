@@ -5,7 +5,7 @@ is running, rather than what it is for. It covers the checks and the commands
 you reach for while working on the code, what to do when the dev frontend is
 slow, how to schedule an agent, and how to deploy the whole thing to a server
 and keep it there. The reasoning behind most of it lives in
-[CONVENTIONS.md](../CONVENTIONS.md); this file is the how.
+[AGENTS.md](../AGENTS.md); this file is the how.
 
 ## Working on it
 
@@ -22,12 +22,12 @@ The hook is opt-in per clone (`git config core.hooksPath .githooks`, which
 `setup.sh` does) because git will not version `.git/hooks`. `git commit
 --no-verify` skips it.
 
-Some of the conventions in [CONVENTIONS.md](../CONVENTIONS.md) are checked by
+Some of the conventions in [AGENTS.md](../AGENTS.md) are checked by
 **structural tests** — `backend/tests/structure/` and
 `frontend/src/structure.test.ts` — which assert on the shape of the codebase
 rather than on what it computes: only the adapter may import `anthropic`, only
 `config.py` may read the environment, no literal colour may appear in a
-component. [CONVENTIONS.md § Checks](../CONVENTIONS.md#checks) lists all of
+component. [AGENTS.md § Checks](../AGENTS.md#checks) lists all of
 them and says what belongs in one.
 
 ## Common tasks

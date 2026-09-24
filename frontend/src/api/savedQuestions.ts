@@ -6,7 +6,7 @@ import type { DatasetProvenance } from 'src/api/clinical';
  * Mirrors `SavedQuestionOut` in backend/app/api/schemas.py. Re-running one
  * goes through the real definitions layer every time (`runSavedQuestion`
  * below), so an edited threshold is picked up rather than a stale answer
- * replayed — see CONVENTIONS.md's "no answer caching" line.
+ * replayed — see AGENTS.md's "no answer caching" line.
  */
 export interface SavedQuestion {
   id: string;

@@ -5,7 +5,7 @@ never the SQL and never the rows. See `SavedQuestion` in `app/models.py`:
 re-running it goes through `clinical_query_service.answer_question` like any
 other question, so an edited threshold is picked up rather than frozen, and
 the run is audited like any other. Saving the rows instead would be an answer
-cache, which this project refuses on purpose — see CONVENTIONS.md § Choosing a
+cache, which this project refuses on purpose — see AGENTS.md § Choosing a
 model and the "no answer caching" line in SEMANTIC_LAYER.md.
 
 Scoped by `user_id` in the WHERE clause, the same discipline every other

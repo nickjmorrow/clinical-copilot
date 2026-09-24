@@ -26,7 +26,7 @@ import { paths } from 'src/paths';
  * said so rather than quietly treated as "new".
  *
  * Keyed by the selection so switching definitions remounts the form instead
- * of an effect syncing props into state — see CONVENTIONS.md > Frontend.
+ * of an effect syncing props into state — see AGENTS.md > Frontend.
  *
  * Anyone may read a definition; only a curator gets a form that writes. The
  * server enforces that either way — this decides what is worth showing.

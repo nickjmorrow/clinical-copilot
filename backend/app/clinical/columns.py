@@ -60,7 +60,7 @@ IDENTIFYING: Final = ("full_name", "birth_date", "ssn", "drivers", "passport", "
 # that granting a real role a specific column later is a one-line edit here,
 # not a new mechanism — plain role-name strings rather than an import from
 # `authz_service`, because `clinical/` sits below `services/` in the import
-# order (CONVENTIONS.md's "Which direction imports run") and may not reach up for
+# order (AGENTS.md's "Which direction imports run") and may not reach up for
 # `authz_service.ROLES`.
 ROLE_IDENTIFYING_COLUMNS: Final[dict[str, tuple[str, ...]]] = {
     "analyst": (),

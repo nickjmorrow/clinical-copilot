@@ -1,6 +1,6 @@
 """Structural tests: the conventions, checked by a machine.
 
-Most of CONVENTIONS.md is prose, and prose is not enforced by anything. That is not
+Most of AGENTS.md is prose, and prose is not enforced by anything. That is not
 a hypothetical worry — it already happened twice in this repo. `MessageList.tsx`
 grew to three components while the doc said one, and `routes/schedules.py` built
 its own queries while the doc said routes call services. Both were written down
@@ -14,7 +14,7 @@ too repo-specific to be a linter rule.
 **What belongs here.** A rule where the cost of the drift is high and the cost
 of the check is a regex or an AST walk: the LLM seam, the config boundary, the
 tool contract, the four-file event change. Every test below names the section of
-CONVENTIONS.md it enforces.
+AGENTS.md it enforces.
 
 **What does not.** Anything `ruff`, `basedpyright` or `eslint` already catches —
 duplicating them is a second place to update. Anything stylistic; a test that
@@ -72,7 +72,7 @@ def _imported_roots(path: Path) -> set[str]:
 
 # --------------------------------------------------------------- the seam
 #
-# CONVENTIONS.md > The LLM seam: "`llm/anthropic_provider.py` is the ONLY file
+# AGENTS.md > The LLM seam: "`llm/anthropic_provider.py` is the ONLY file
 # allowed to import `anthropic`. If the SDK appears anywhere else, the seam has
 # leaked and the next model swap becomes a refactor."
 
@@ -86,13 +86,13 @@ def test_only_the_adapter_imports_the_provider_sdk():
     ]
     assert leaked == [], (
         f"The `anthropic` SDK leaked out of the seam into {leaked}. "
-        "Only app/llm/anthropic_provider.py may import it — see CONVENTIONS.md > The LLM seam."
+        "Only app/llm/anthropic_provider.py may import it — see AGENTS.md > The LLM seam."
     )
 
 
 # -------------------------------------------------------- the config boundary
 #
-# CONVENTIONS.md > Configuration: "`os.getenv` anywhere else is a bug: a typo in an
+# AGENTS.md > Configuration: "`os.getenv` anywhere else is a bug: a typo in an
 # env var name should fail at startup with a clear error, not at 2am with a
 # `None`."
 
@@ -115,13 +115,13 @@ def test_the_environment_is_read_in_exactly_one_place():
     ]
     assert leaked == [], (
         f"{leaked} read the environment directly. Every environment-dependent value is a field "
-        "on Settings in app/config.py — see CONVENTIONS.md > Configuration."
+        "on Settings in app/config.py — see AGENTS.md > Configuration."
     )
 
 
 # ------------------------------------------------------------ routes are thin
 #
-# CONVENTIONS.md > Layout: "Routes exist to translate HTTP into a service call and
+# AGENTS.md > Layout: "Routes exist to translate HTTP into a service call and
 # back." The check is narrow on purpose: a route may name a model in a type
 # annotation, but the moment it builds a query it has grown a second home for
 # business logic that a CLI or the worker cannot reach.
@@ -142,13 +142,13 @@ def test_routes_do_not_build_their_own_queries():
     assert offenders == [], (
         f"{offenders} import sqlalchemy. A route validates, authorizes, calls a service and shapes "
         "a response; the query belongs in app/services/ where a second caller can reach it. "
-        "See CONVENTIONS.md > Layout."
+        "See AGENTS.md > Layout."
     )
 
 
 # ------------------------------------------------------- services take a session
 #
-# CONVENTIONS.md > Layout: "services/ — Business logic. Every function takes an
+# AGENTS.md > Layout: "services/ — Business logic. Every function takes an
 # explicit session." Reaching for an ambient request-scoped session is what
 # makes service code unusable from the worker.
 
@@ -172,13 +172,13 @@ def test_every_service_function_takes_an_explicit_session():
 
     assert offenders == [], (
         f"{offenders} do not take `session` as their first argument. Every service function takes "
-        "an explicit session — see CONVENTIONS.md > Layout."
+        "an explicit session — see AGENTS.md > Layout."
     )
 
 
 # --------------------------------------------------------- the tool contract
 #
-# CONVENTIONS.md > Tools: "Schemas are closed. Every property declared, `required`
+# AGENTS.md > Tools: "Schemas are closed. Every property declared, `required`
 # listed, `additionalProperties: false`. The adapter sends tools as strict, so
 # the provider guarantees the arguments validate before a handler ever sees
 # them — which is what lets `run` read its input directly instead of
@@ -208,13 +208,13 @@ def test_tool_schemas_are_closed(definition):
 
 
 def test_tool_descriptions_say_when_to_call_the_tool():
-    # CONVENTIONS.md > Tools: "The description is prompt, not documentation. Say
+    # AGENTS.md > Tools: "The description is prompt, not documentation. Say
     # *when* to call it, not just what it does." A length floor is a crude proxy
     # and deliberately crude: it catches "Gets the time." and nothing else.
     too_short = [d.name for d in tools.definitions() if len(d.description) < 80]
     assert too_short == [], (
         f"{too_short} have a one-line description. Say when the model should reach for the tool, "
-        "not just what it does — see CONVENTIONS.md > Tools."
+        "not just what it does — see AGENTS.md > Tools."
     )
 
 
@@ -230,7 +230,7 @@ def _structure_context() -> ToolContext:
 
 
 async def test_no_registered_tool_raises_on_bad_input():
-    """CONVENTIONS.md > Tools: "Handlers never raise."
+    """AGENTS.md > Tools: "Handlers never raise."
 
     The registry catches an exception anyway and turns it into an error result,
     so this passes even for a handler that breaks the rule. That is the point:
@@ -249,7 +249,7 @@ async def test_an_unknown_tool_is_an_error_result_not_an_exception():
 
 # ------------------------------------------------ the four-file event change
 #
-# CONVENTIONS.md > The LLM seam: "Adding an event type is a four-file change, and all
+# AGENTS.md > The LLM seam: "Adding an event type is a four-file change, and all
 # four must stay in step: llm/types.py, the adapter that emits it, the SSE
 # encoder, and frontend/src/api/stream.ts."
 #
@@ -268,7 +268,7 @@ def test_every_stream_event_is_handled_by_the_worker():
     assert unhandled == [], (
         f"{unhandled} are in LLMStreamEvent but never named in app/worker/. The match statement "
         "in worker/turn.py is the consumer of that union — an unhandled case falls through "
-        "silently. See CONVENTIONS.md > The LLM seam."
+        "silently. See AGENTS.md > The LLM seam."
     )
 
 
@@ -288,7 +288,7 @@ def test_the_typescript_union_matches_the_frames_the_backend_sends():
     assert declared == WIRE_FRAMES, (
         f"frontend/src/api/stream.ts declares {sorted(declared)} but the backend sends "
         f"{sorted(WIRE_FRAMES)}. Adding an event type is a four-file change and this is the "
-        "fourth file — see CONVENTIONS.md > The LLM seam."
+        "fourth file — see AGENTS.md > The LLM seam."
     )
 
 
@@ -310,7 +310,7 @@ def test_every_wire_frame_is_actually_emitted_by_the_backend():
 
 # --------------------------------------------------- clinical SQL has one author
 #
-# CONVENTIONS.md > The definitions layer: "`app/clinical/assembler.py` is the only
+# AGENTS.md > The definitions layer: "`app/clinical/assembler.py` is the only
 # thing in this codebase that writes SQL for a clinical question."
 #
 # This is what statement gating looks like when the door has no handle. There is
@@ -365,11 +365,11 @@ def test_only_the_assembler_queries_the_clinical_tables():
         "from validated predicates in app/clinical/assembler.py — that is the only reason the "
         "definitions layer can claim the model never writes SQL. The exceptions are columns.py "
         "(which owns the column allowlist), seed_service.py (which writes the data) and "
-        "catalog_service.py (which only counts rows). See CONVENTIONS.md > The definitions layer."
+        "catalog_service.py (which only counts rows). See AGENTS.md > The definitions layer."
     )
 
 
-# CONVENTIONS.md > The definitions layer: the catalog is allowed to count rows, and
+# AGENTS.md > The definitions layer: the catalog is allowed to count rows, and
 # nothing else. Widening the allowlist above without this would turn "only the
 # assembler reads patient data" into "only the assembler, and whatever else we
 # added later".
@@ -395,7 +395,7 @@ def test_the_catalog_never_reads_an_identifying_column():
 
 # ------------------------------------------------------------ import direction
 #
-# CONVENTIONS.md > Layout > Which direction imports run: "`services/` never imports
+# AGENTS.md > Layout > Which direction imports run: "`services/` never imports
 # `api/` or `worker`, and nothing outside `app/api/` imports `api/routes` or
 # `api/middleware`. A service that reaches up into the HTTP layer is one a
 # worker can no longer call, which is the entire reason `services/` exists."
@@ -426,7 +426,7 @@ def test_services_never_import_the_layers_above_them():
         f"{offenders} import the HTTP layer or the worker. Business logic may only import the "
         "layers below it — models, llm, tools, bus, config. A service that reaches up into "
         "app/api/ is one the worker can no longer call, which is the entire reason services/ "
-        "exists. See CONVENTIONS.md > Layout > Which direction imports run."
+        "exists. See AGENTS.md > Layout > Which direction imports run."
     )
 
 
@@ -454,13 +454,13 @@ def test_only_main_imports_the_http_layer():
         f"{offenders} import app/api/. That package is HTTP, and only main.py wires it. "
         "Whatever is wanted from it belongs lower down: business logic in services/, the event "
         "shapes both transports send in app/wire.py, a default in app/config.py. A worker that "
-        "imports the HTTP layer is one you cannot run without it. See CONVENTIONS.md > Layout."
+        "imports the HTTP layer is one you cannot run without it. See AGENTS.md > Layout."
     )
 
 
 # ------------------------------------------------------------- empty packages
 #
-# CONVENTIONS.md > Layout > One thing per file: "every `__init__.py` is empty except
+# AGENTS.md > Layout > One thing per file: "every `__init__.py` is empty except
 # `tools/__init__.py`, which is the registry and says so. Services are imported
 # as modules rather than as loose symbols, so the call site says which layer it
 # is calling into."
@@ -477,5 +477,5 @@ def test_package_inits_are_empty_except_the_tool_registry():
         f"{populated} are not empty. A package __init__ that re-exports its modules gives every "
         "symbol two import paths and hides which layer a call goes to; import the module instead "
         "(`from app.services import conversation_service`). tools/__init__.py is the one "
-        "exception because it IS the registry. See CONVENTIONS.md > Layout."
+        "exception because it IS the registry. See AGENTS.md > Layout."
     )

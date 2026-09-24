@@ -7,7 +7,7 @@ exactly like the model's tool does — resolved fresh against whatever the
 definitions say right now, audited with `via="cohort"`, never served from a
 stored answer. Saving the rows instead would be an answer cache, which this
 project refuses on purpose; see `app/services/saved_question_service.py` and
-CONVENTIONS.md's "no answer caching" line.
+AGENTS.md's "no answer caching" line.
 """
 
 import uuid

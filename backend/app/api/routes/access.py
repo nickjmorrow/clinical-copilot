@@ -9,7 +9,7 @@ confine to it) rather than a permission model; see
 
 The write is gated `RequireCurator`, the same guard a definition edit gets:
 changing what a user's own queries can see is exactly the kind of change
-CONVENTIONS.md's authorization discipline exists to keep deliberate.
+AGENTS.md's authorization discipline exists to keep deliberate.
 """
 
 from fastapi import APIRouter

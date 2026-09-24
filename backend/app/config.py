@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     # a plain `str` would otherwise fail much later as an opaque 401.
     anthropic_api_key: str = ""
 
-    # See CONVENTIONS.md § Choosing a model before changing this.
+    # See AGENTS.md § Choosing a model before changing this.
     anthropic_model: str = "claude-opus-5"
 
     # A ceiling, not a target — the model stops when it is done. Set high

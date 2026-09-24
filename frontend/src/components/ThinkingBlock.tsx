@@ -20,7 +20,7 @@ interface Props {
  * flipping state when the duration seals.
  *
  * Note what this is NOT: persisted. Reasoning never becomes an `event_record`
- * (see CONVENTIONS.md), so nothing here survives a refresh. Making it durable is a
+ * (see AGENTS.md), so nothing here survives a refresh. Making it durable is a
  * four-file event-type change and a reversal of that decision.
  *
  * Today it does not even survive the turn: `useConversationStream` drops the

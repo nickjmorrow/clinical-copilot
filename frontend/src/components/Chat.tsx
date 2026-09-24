@@ -35,7 +35,7 @@ interface Props {
  * empty transcript — the starter questions and a composer, indistinguishable
  * from a new conversation — and the first message sent from it failed. A 404
  * is its own sentence, because it is the answer for a deleted conversation
- * and for someone else's, which must look the same (CONVENTIONS.md >
+ * and for someone else's, which must look the same (AGENTS.md >
  * Authorization); anything else can be retried.
  */
 export default function Chat({ composerRef, conversationId, onCreated }: Props) {

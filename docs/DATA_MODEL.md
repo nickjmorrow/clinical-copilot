@@ -275,10 +275,10 @@ evidence that earned each one a place, and named in
 template's and have grown since. `event_records` is the append-only transcript —
 one row per user message, assistant response, tool call and tool result, with
 everything on screen derived by replaying it. See
-[CONVENTIONS.md § The transcript](../CONVENTIONS.md#the-transcript).
+[AGENTS.md § The transcript](../AGENTS.md#the-transcript).
 `conversations` gained `pinned_at`, `archived_at` and `title_custom` for the
-sidebar's controls ([CONVENTIONS.md § Conversation
-controls](../CONVENTIONS.md#conversation-controls)), and `tasks` gained
+sidebar's controls ([AGENTS.md § Conversation
+controls](../AGENTS.md#conversation-controls)), and `tasks` gained
 `request_id`, so a turn's worker logs join to the API request that enqueued it.
 
 **`usage_events`** is the fifth, and the ledger the cost ceilings are counted

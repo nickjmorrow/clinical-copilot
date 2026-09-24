@@ -10,8 +10,8 @@ entry with no argument for it is a feature someone thought of, and those are
 free to think of — so the bar for being in this file is that the reasoning
 survives being read back in three months.
 
-Two rules, borrowed from [CONVENTIONS.md § What is deliberately
-missing](../CONVENTIONS.md#what-is-deliberately-missing), which this file is the long
+Two rules, borrowed from [AGENTS.md § What is deliberately
+missing](../AGENTS.md#what-is-deliberately-missing), which this file is the long
 form of:
 
 - **Delete an entry the day it ships.** A gap list that still claims something
@@ -375,7 +375,7 @@ surfaced that rather than requiring §11's harder half first.
 Still missing: a digest (the same page, delivered rather than opened) and a
 schedules UI. `/api/schedules` is unchanged: it exists, works, and is
 unreachable from the browser, deliberately — see
-[CONVENTIONS.md](../CONVENTIONS.md#what-is-deliberately-missing).
+[AGENTS.md](../AGENTS.md#what-is-deliberately-missing).
 
 ### 18. Export, and treating it as a governed act
 
@@ -424,7 +424,7 @@ decorative — verified with a test that grants `auditor` a column via
 `monkeypatch`, confirms it reads through the real `find_patients`-shaped path,
 and confirms an ungranted role still can't. The identity seam itself is
 still the easy half whenever a second real user shows up — one function, see
-[CONVENTIONS.md § Identity](../CONVENTIONS.md#identity).
+[AGENTS.md § Identity](../AGENTS.md#identity).
 
 ## Deliberately not on this list
 

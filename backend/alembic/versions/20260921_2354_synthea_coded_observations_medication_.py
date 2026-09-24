@@ -15,7 +15,7 @@ hold nothing but regenerable synthetic data, and `ALTER TABLE ... ADD COLUMN
 ... NOT NULL` with no default fails outright against an existing row anyway —
 autogenerate cannot see that this is a dataset swap, not a column added to
 data worth keeping, so the truncate is hand-added rather than something
-`--autogenerate` produced. Read CONVENTIONS.md's note on this migration before
+`--autogenerate` produced. Read AGENTS.md's note on this migration before
 touching it again: `docker compose up` reseeds automatically, but any other
 deployment applying this needs `python -m app.seed` run again afterwards.
 `query_audit` and `clinical_definitions` are untouched here — old audit rows

@@ -63,7 +63,7 @@ export function readCohortCall(name: string, input: Record<string, unknown>): Co
  * a refusal carries no data.
  *
  * Tolerant of every shape ever written, because the transcript is
- * append-only (CONVENTIONS.md > The transcript): an answer recorded before the
+ * append-only (AGENTS.md > The transcript): an answer recorded before the
  * count was part of the data is still on screen. An aggregate from then
  * carried its rows and nothing else, so its count is the number of rows; a
  * patient list from then carried nothing, and is indistinguishable from a

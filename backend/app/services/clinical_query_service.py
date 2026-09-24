@@ -706,7 +706,7 @@ async def _error(  # noqa: PLR0913 — every field is what an audit row needs; s
 ) -> ClinicalAnswer:
     # The message may carry SQL and column names, so it goes to the audit row
     # and the server log — never to the model, which would put it in the
-    # conversation. See CONVENTIONS.md > Tools. `exc_info=error` rather than
+    # conversation. See AGENTS.md > Tools. `exc_info=error` rather than
     # `.exception()`: this runs inside the caller's `except` block but is not
     # textually inside one itself, which is what `.exception()` requires.
     logger.error("clinical query failed", asked_by=asker.user_id, exc_info=error)
