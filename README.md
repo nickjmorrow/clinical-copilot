@@ -5,7 +5,7 @@
 A chat app that answers clinical questions about a hospital's patients in plain
 English — and does **not** let the model write the SQL.
 
-**Live demo: [204-168-227-216.sslip.io](https://204-168-227-216.sslip.io)** —
+**Live demo: [copilot.nickjmorrow.com](https://copilot.nickjmorrow.com)** —
 try *"Which patients are on a nephrotoxic medication and have impaired kidney
 function?"* All data is synthetic, and usage is rate-limited per visitor.
 
